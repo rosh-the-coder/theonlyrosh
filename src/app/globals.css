@@ -1,0 +1,387 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Climate+Crisis:wght@400&display=swap');
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff6b6b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff5252;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: #ff6b6b #1a1a1a;
+}
+
+/* Custom cursor styles */
+.custom-cursor {
+  pointer-events: none;
+  position: fixed;
+  z-index: 9999;
+  mix-blend-mode: difference;
+}
+
+.cursor-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-ring {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #ff6b6b;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.1s ease;
+}
+
+/* Magnetic hover effects */
+.magnetic {
+  transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.magnetic:hover {
+  transform: scale(1.05);
+}
+
+/* Text reveal animations */
+.text-reveal {
+  overflow: hidden;
+  position: relative;
+}
+
+.text-reveal span {
+  display: inline-block;
+  transform: translateY(100%);
+  transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.text-reveal.revealed span {
+  transform: translateY(0);
+}
+
+/* Parallax elements */
+.parallax {
+  will-change: transform;
+}
+
+/* Sticky section styles */
+.sticky-section {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Hero section specific styles */
+.hero-container {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+}
+
+/* Music player styles */
+.music-player {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.music-player:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Project showcase styles */
+.project-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.project-card:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 107, 107, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.project-card:hover::before {
+  transform: translateX(100%);
+}
+
+/* Skill bar animations */
+.skill-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.skill-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b6b, #ff8e8e);
+  transform: translateX(-100%);
+  transition: transform 1.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.skill-bar.animate .skill-progress {
+  transform: translateX(0);
+}
+
+/* Floating elements */
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Glow effects */
+.glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.5); }
+  100% { box-shadow: 0 0 30px rgba(255, 107, 107, 0.8); }
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .hero-container {
+    height: 100vh;
+  }
+  
+  .music-player {
+    bottom: 20px;
+    right: 20px;
+    padding: 12px;
+  }
+  
+  .custom-cursor {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-container {
+    height: 100vh;
+  }
+}
+
+/* Loading animations */
+.loading {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease;
+}
+
+.loading.loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hover effects for interactive elements */
+.interactive {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.interactive:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* Section dividers */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ff6b6b, transparent);
+  margin: 4rem 0;
+}
+
+/* Backdrop blur effects */
+.backdrop-blur {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e, #ff6b6b);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Loading screen styles */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: #0B0B0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-countdown {
+  font-family: 'Climate Crisis', sans-serif;
+  font-weight: 400;
+  font-size: 8rem;
+  color: #FF5353;
+  text-shadow: 
+    0.5px 0.5px 0 #0C2740, 
+    -0.5px -0.5px 0 #0C2740, 
+    4px 4px 10px rgba(255,73,73,0.55);
+  letter-spacing: -0.02em;
+  animation: countdown-pulse 0.1s ease-in-out infinite alternate;
+}
+
+@keyframes countdown-pulse {
+  0% { 
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% { 
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.loading-progress {
+  width: 256px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2rem;
+}
+
+.loading-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #FF5353, #FF4949);
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+/* Responsive loading screen */
+@media (max-width: 768px) {
+  .loading-countdown {
+    font-size: 6rem;
+  }
+  
+  .loading-progress {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loading-countdown {
+    font-size: 4rem;
+  }
+  
+  .loading-progress {
+    width: 160px;
+  }
+}
