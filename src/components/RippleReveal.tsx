@@ -3,8 +3,22 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+type TextElement = {
+  text: string;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  font?: string;
+  fontWeight?: string | number;
+  letterSpacing?: string;
+  lineHeight?: string;
+};
+
 type Props = {
   imageUrl: string;
+  text?: string;
+  textElements?: TextElement[];
   chroma: number;
   decay: number;
   brushRadiusPxAt1440: number;
@@ -26,6 +40,8 @@ export default function RippleReveal(p: Props) {
 
   // load portrait
   const [tex, setTex] = useState<THREE.Texture | null>(null);
+  const [textTex, setTextTex] = useState<THREE.Texture | null>(null);
+  
   useEffect(() => {
     let mounted = true;
     new THREE.TextureLoader().load(
@@ -46,6 +62,90 @@ export default function RippleReveal(p: Props) {
       mounted = false;
     };
   }, [p.imageUrl]);
+
+  // create text texture
+  useEffect(() => {
+    if (!p.text && !p.textElements) return;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Larger canvas for multiple text elements
+    canvas.width = 1200;
+    canvas.height = 600;
+    
+    // Set background to match website color
+    ctx.fillStyle = '#0B0B0B';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (p.textElements && p.textElements.length > 0) {
+      // Draw multiple text elements
+      p.textElements.forEach(element => {
+        // Set text style for this element
+        ctx.fillStyle = element.color;
+        const fontWeight = element.fontWeight || 'bold';
+        const letterSpacing = element.letterSpacing || 'normal';
+        const fontFamily = element.font || 'Arial, sans-serif';
+        
+        ctx.font = `${fontWeight} ${element.size}px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Set letter spacing if specified
+        if (letterSpacing !== 'normal') {
+          ctx.letterSpacing = letterSpacing;
+        }
+        
+        // Add text shadow for depth (only for large text)
+        if (element.size > 100) {
+          ctx.shadowColor = 'rgba(0,0,0,0.8)';
+          ctx.shadowBlur = 4;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+        }
+        
+        // Draw text at specified position
+        ctx.fillText(element.text, element.x, element.y);
+        
+        // Reset shadow and letter spacing for next element
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.letterSpacing = 'normal';
+      });
+    } else if (p.text) {
+      // Draw single text element (fallback)
+      ctx.fillStyle = '#FF5353';
+      ctx.font = 'bold 120px Climate Crisis, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = '0.05em';
+      
+      // Add text shadow for depth
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+      
+      // Draw text centered
+      ctx.fillText(p.text, canvas.width / 2, canvas.height / 2);
+    }
+    
+    // Create texture
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.generateMipmaps = false;
+    
+    setTextTex(texture);
+    
+    return () => {
+      texture.dispose();
+    };
+  }, [p.text, p.textElements]);
 
   // ping-pong targets
   const rta = useRef<THREE.WebGLRenderTarget>();
@@ -93,6 +193,8 @@ export default function RippleReveal(p: Props) {
       uBrushStrength: { value: 0.95 },
       uBrushRadius: { value: 0.12 },
       uDelta: { value: 0 },
+      uTrail: { value: new THREE.Vector2(-10, -10) }, // trail position
+      uTrailStrength: { value: 0.0 }, // trail opacity
     };
     brushU.current = uniforms;
     return new THREE.ShaderMaterial({
@@ -109,6 +211,7 @@ export default function RippleReveal(p: Props) {
     const uniforms = {
       uMask: { value: null as THREE.Texture | null },
       uImage: { value: tex },
+      uText: { value: textTex },
       uTime: { value: 0 },
       uChroma: { value: p.chroma },
       uRippleAmpPx: { value: p.rippleAmplitudePxAt1440 },
@@ -116,6 +219,7 @@ export default function RippleReveal(p: Props) {
       uRippleDamp: { value: p.rippleDamp },
       uResolution: { value: new THREE.Vector2(1, 1) },
       uHasImage: { value: tex ? 1 : 0 },
+      uHasText: { value: textTex ? 1 : 0 },
     };
     compU.current = uniforms;
     return new THREE.ShaderMaterial({
@@ -126,11 +230,13 @@ export default function RippleReveal(p: Props) {
       depthWrite: false,
       transparent: true, // allow DOM text to show
     });
-  }, [tex, p.chroma, p.rippleAmplitudePxAt1440, p.rippleFreq, p.rippleDamp]);
+  }, [tex, textTex, p.chroma, p.rippleAmplitudePxAt1440, p.rippleFreq, p.rippleDamp]);
 
-  // pointer
+  // pointer with trail tracking
   const pointer = useRef({ x: -10, y: -10, down: false });
   const prev = useRef({ x: -10, y: -10 });
+  const trail = useRef<Array<{x: number, y: number, time: number}>>([]);
+  const maxTrailLength = 8;
 
   useEffect(() => {
     const el = (gl.domElement as HTMLCanvasElement);
@@ -146,12 +252,28 @@ export default function RippleReveal(p: Props) {
       const uv = rectToUV(e);
       prev.current = { x: uv.x, y: uv.y };
       pointer.current = { ...uv, down: true };
+      // Clear trail on new interaction
+      trail.current = [{ x: uv.x, y: uv.y, time: Date.now() }];
     };
-    const up = () => (pointer.current.down = false);
+    const up = () => {
+      pointer.current.down = false;
+      // Keep trail for a moment after release
+      setTimeout(() => {
+        trail.current = [];
+      }, 200);
+    };
     const move = (e: PointerEvent) => {
       const uv = rectToUV(e);
       prev.current = { x: pointer.current.x, y: pointer.current.y };
       pointer.current = { ...uv, down: pointer.current.down };
+      
+      // Add to trail
+      trail.current.push({ x: uv.x, y: uv.y, time: Date.now() });
+      
+      // Limit trail length
+      if (trail.current.length > maxTrailLength) {
+        trail.current = trail.current.slice(-maxTrailLength);
+      }
     };
     el.addEventListener("pointerdown", down);
     window.addEventListener("pointerup", up);
@@ -188,12 +310,37 @@ export default function RippleReveal(p: Props) {
     // PASS A — decay + brush into rta
     brushU.current.uPrev.value = rtb.current.texture;
     brushU.current.uDelta.value = Math.min(dt, 0.05);
-    // slight smoothing
+    
+    // Calculate smooth brush position
     const bx = THREE.MathUtils.lerp(prev.current.x, pointer.current.x, 0.3);
     const by = THREE.MathUtils.lerp(prev.current.y, pointer.current.y, 0.3);
     brushU.current.uBrush.value.set(bx, by);
+    
+    // Calculate trail position and strength
+    let trailX = -10, trailY = -10, trailStrength = 0.0;
+    if (trail.current.length > 1) {
+      // Use the second-to-last position for trail (slightly behind cursor)
+      const trailPoint = trail.current[trail.current.length - 2];
+      trailX = trailPoint.x;
+      trailY = trailPoint.y;
+      
+      // Calculate trail strength based on movement speed and recency
+      const timeDiff = Date.now() - trailPoint.time;
+      const movementDistance = Math.sqrt(
+        Math.pow(pointer.current.x - trailPoint.x, 2) + 
+        Math.pow(pointer.current.y - trailPoint.y, 2)
+      );
+      
+      // Trail strength decreases with time and increases with movement speed
+      trailStrength = Math.max(0, Math.min(0.6, 
+        (1.0 - timeDiff / 100) * (movementDistance * 10)
+      ));
+    }
+    
+    brushU.current.uTrail.value.set(trailX, trailY);
+    brushU.current.uTrailStrength.value = trailStrength;
 
-    quad.material = brushMat;
+    (quad.material as any) = brushMat;
     state.gl.setRenderTarget(rta.current);
     state.gl.render(scene, cam);
     state.gl.setRenderTarget(null);
@@ -201,8 +348,9 @@ export default function RippleReveal(p: Props) {
     // PASS B — composite to screen
     compU.current.uMask.value = rta.current.texture;
     compU.current.uHasImage.value = tex ? 1 : 0;
+    compU.current.uHasText.value = textTex ? 1 : 0;
     compU.current.uTime.value += dt;
-    quad.material = compMat;
+    (quad.material as any) = compMat;
     state.gl.render(scene, cam);
 
     // swap
@@ -224,7 +372,7 @@ void main() {
 }
 `;
 
-// Pass A: mask accumulate + decay
+// Pass A: mask accumulate + decay with trail
 const MASK_FRAG = `
 precision highp float;
 varying vec2 vUv;
@@ -234,6 +382,8 @@ uniform vec2  uBrush;
 uniform float uBrushRadius;
 uniform float uBrushStrength;
 uniform float uDelta;
+uniform vec2  uTrail;
+uniform float uTrailStrength;
 
 float g(float x){ return exp(-x*x); }
 
@@ -241,20 +391,32 @@ void main(){
   float prev = texture2D(uPrev, vUv).r;
   float mask = prev * pow(uDecay, max(uDelta * 60.0, 1.0));
 
+  // Main brush
   float d = distance(vUv, uBrush) / max(uBrushRadius, 1e-6);
   if(d < 2.0){
     mask = clamp(mask + g(d*1.1) * uBrushStrength, 0.0, 1.0);
   }
+  
+  // Trail brush (tapered and reduced opacity)
+  if(uTrailStrength > 0.0){
+    float trailD = distance(vUv, uTrail) / max(uBrushRadius * 0.7, 1e-6);
+    if(trailD < 1.5){
+      float trailMask = g(trailD*1.3) * uBrushStrength * uTrailStrength * 0.5;
+      mask = clamp(mask + trailMask, 0.0, 1.0);
+    }
+  }
+  
   gl_FragColor = vec4(mask, mask, mask, 1.0);
 }
 `;
 
-// Pass B: show a visible gray gradient even if image missing; apply ripple + CA inside mask
+// Pass B: show background with text overlay, apply ripple + CA inside mask
 const COMP_FRAG = `
 precision highp float;
 varying vec2 vUv;
 uniform sampler2D uMask;
 uniform sampler2D uImage;
+uniform sampler2D uText;
 uniform float uTime;
 uniform float uChroma;
 uniform float uRippleAmpPx;
@@ -262,6 +424,7 @@ uniform float uRippleFreq;
 uniform float uRippleDamp;
 uniform vec2  uResolution;
 uniform int   uHasImage;
+uniform int   uHasText;
 
 vec3 sampleCA(vec2 uv, float ca){
   vec2 off = vec2(ca, 0.0);
@@ -274,10 +437,20 @@ vec3 sampleCA(vec2 uv, float ca){
 void main(){
   float mask = texture2D(uMask, vUv).r;
 
-  // visible test bg (you should SEE this immediately)
-  vec3 bg = mix(vec3(0.08), vec3(0.18), vUv.y);
+  // Website background color
+  vec3 bg = vec3(0.043, 0.043, 0.043); // #0B0B0B
 
-  vec3 col = bg;
+  // Sample text texture at original size
+  vec3 textCol = bg;
+  if(uHasText == 1){
+    // Map UV coordinates directly to text texture (no scaling)
+    vec2 textUV = vUv;
+    if(textUV.x >= 0.0 && textUV.x <= 1.0 && textUV.y >= 0.0 && textUV.y <= 1.0){
+      textCol = texture2D(uText, textUV).rgb;
+    }
+  }
+
+  vec3 col = textCol;
   if(uHasImage == 1){
     vec2 texel = 1.0 / uResolution;
     float mL = texture2D(uMask, vUv - vec2(texel.x, 0.0)).r;
@@ -297,7 +470,8 @@ void main(){
     col = sampleCA(uv, ca);
   }
 
-  vec3 outCol = mix(bg, col, smoothstep(0.0, 1.0, mask));
+  // When mask is high (hovered), show image; when low, show text on bg
+  vec3 outCol = mix(textCol, col, smoothstep(0.0, 1.0, mask));
   gl_FragColor = vec4(outCol, 1.0);
 }
 `;

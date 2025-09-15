@@ -7,7 +7,7 @@ import RippleReveal from "../RippleReveal";
 export default function Hero() {
   return (
     <section className="relative h-[100svh] bg-[#0B0B0B] overflow-hidden">
-      {/* Canvas sits BEHIND the text */}
+      {/* Canvas covers the entire viewport */}
       <Canvas
         className="absolute inset-0 z-0 pointer-events-auto"
         gl={(canvas) =>
@@ -20,13 +20,21 @@ export default function Hero() {
           })
         }
         camera={{ position: [0, 0, 1], fov: 15, near: 0.1, far: 10 }}
+        style={{ cursor: 'none' }}
       >
         <Suspense fallback={null}>
           <RippleReveal
             imageUrl="/rosh-placeholder.jpg"
+            textElements={[
+              { text: "i am", x: 60, y: 200, size: 48, color: "#FFF", font: "Teko", fontWeight: 100 },
+              { text: "ROSH", x: 600, y: 200, size: 48, color: "#FFF", font: "Teko", fontWeight: 100 },
+              { text: "a", x: 1155, y: 200, size: 48, color: "#FFF", font: "Teko", fontWeight: 100 },
+              { text: "DESIGN ENGINEER", x: 600, y: 300, size: 170, color: "#FE5454", font: "Teko", fontWeight: 700, letterSpacing: "1.04px" },
+            
+            ]}
             chroma={0.002}
             decay={0.975}
-            brushRadiusPxAt1440={140}
+            brushRadiusPxAt1440={120}
             rippleAmplitudePxAt1440={2.0}
             rippleFreq={26.0}
             rippleDamp={2.2}
@@ -34,22 +42,6 @@ export default function Hero() {
           />
         </Suspense>
       </Canvas>
-
-      {/* Foreground text ALWAYS above canvas */}
-      <div className="relative z-10 flex h-[100svh] items-center justify-center px-6 pointer-events-none">
-        <h1
-          className="select-none text-center font-extrabold leading-none"
-          style={{
-            fontSize: "clamp(3rem, 12vw, 14rem)",
-            color: "#FF5353",
-            textShadow:
-              "0.5px 0.5px 0 #0C2740, -0.5px -0.5px 0 #0C2740, 4px 4px 10px rgba(255,73,73,0.55)",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          ROSHAN
-        </h1>
-      </div>
     </section>
   );
 }

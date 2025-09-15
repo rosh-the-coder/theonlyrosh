@@ -326,15 +326,15 @@ a {
 }
 
 .loading-countdown {
-  font-family: 'Climate Crisis', sans-serif;
-  font-weight: 400;
+  font-family: 'Imbue', serif;
+  font-weight: 700;
   font-size: 8rem;
-  color: #FF5353;
+  color: #FE5454;
   text-shadow: 
     0.5px 0.5px 0 #0C2740, 
     -0.5px -0.5px 0 #0C2740, 
-    4px 4px 10px rgba(255,73,73,0.55);
-  letter-spacing: -0.02em;
+    4px 4px 10px rgba(254,84,84,0.55);
+  letter-spacing: 1.04px;
   animation: countdown-pulse 0.1s ease-in-out infinite alternate;
 }
 
