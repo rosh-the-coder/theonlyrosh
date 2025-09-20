@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { MotionConfig } from 'framer-motion'
 
 interface ProvidersProps {
@@ -8,6 +8,12 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   return (
     <MotionConfig
       transition={{

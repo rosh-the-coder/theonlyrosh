@@ -1,143 +1,177 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useEffect, useState } from 'react'
 
 export default function CustomCursor() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isMounted, setIsMounted] = useState(false)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [trailPos, setTrailPos] = useState({ x: 0, y: 0 })
   const [isHovering, setIsHovering] = useState(false)
   const [isClicking, setIsClicking] = useState(false)
-  const cursorRef = useRef<HTMLDivElement>(null)
-  
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  
-  const springConfig = { damping: 25, stiffness: 700 }
-  const cursorX = useSpring(mouseX, springConfig)
-  const cursorY = useSpring(mouseY, springConfig)
-  
-  const scale = useTransform(cursorX, [0, 1000], [1, 1.5])
-  const rotate = useTransform(cursorY, [0, 1000], [0, 360])
+  const [cursorColor, setCursorColor] = useState('#FE5454')
 
   useEffect(() => {
+    setIsMounted(true)
+    
+    let animationId: number
+    
     const updateMousePosition = (e: MouseEvent) => {
-      const { clientX, clientY } = e
-      setMousePosition({ x: clientX, y: clientY })
-      mouseX.set(clientX)
-      mouseY.set(clientY)
+      setMousePos({ x: e.clientX, y: e.clientY })
     }
 
-    const handleMouseEnter = () => setIsHovering(true)
-    const handleMouseLeave = () => setIsHovering(false)
+    const animateTrail = () => {
+      setTrailPos(prev => {
+        const dx = mousePos.x - prev.x
+        const dy = mousePos.y - prev.y
+        
+        return {
+          x: prev.x + dx * 0.12, // Smooth trailing (0.1 = very smooth, 0.2 = more responsive)
+          y: prev.y + dy * 0.12
+        }
+      })
+      
+      animationId = requestAnimationFrame(animateTrail)
+    }
+
     const handleMouseDown = () => setIsClicking(true)
     const handleMouseUp = () => setIsClicking(false)
 
-    // Add magnetic effect to interactive elements
+    // Check for interactive elements and get color
     const handleMouseMove = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      if (target.closest('.magnetic, .interactive, button, a')) {
+      
+      // Check for interactive elements
+      if (target.closest('button, a, [data-cursor="hover"]')) {
         setIsHovering(true)
       } else {
         setIsHovering(false)
+      }
+      
+      // Get the actual visible background color by traversing up the DOM tree
+      let backgroundColor = 'rgb(11, 11, 11)' // Default to your website's dark background
+      const element = document.elementFromPoint(e.clientX, e.clientY)
+      
+      if (element) {
+        // Walk up the DOM tree to find the first non-transparent background
+        let currentElement = element as HTMLElement
+        while (currentElement && currentElement !== document.body) {
+          const computedStyle = window.getComputedStyle(currentElement)
+          const bg = computedStyle.backgroundColor
+          
+          // Check if this element has a non-transparent background
+          if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+            backgroundColor = bg
+            break
+          }
+          
+          currentElement = currentElement.parentElement as HTMLElement
+        }
+        
+        // If no background found, check body
+        if (backgroundColor === 'rgb(11, 11, 11)') {
+          const bodyStyle = window.getComputedStyle(document.body)
+          const bodyBg = bodyStyle.backgroundColor
+          if (bodyBg && bodyBg !== 'transparent' && bodyBg !== 'rgba(0, 0, 0, 0)') {
+            backgroundColor = bodyBg
+          }
+        }
+        
+        // Convert background color to RGB values
+        let r = 11, g = 11, b = 11 // Default to your dark background
+        
+        // Handle RGB
+        const rgbMatch = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
+        if (rgbMatch) {
+          r = parseInt(rgbMatch[1])
+          g = parseInt(rgbMatch[2])
+          b = parseInt(rgbMatch[3])
+        }
+        // Handle RGBA
+        else {
+          const rgbaMatch = backgroundColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
+          if (rgbaMatch) {
+            r = parseInt(rgbaMatch[1])
+            g = parseInt(rgbaMatch[2])
+            b = parseInt(rgbaMatch[3])
+          }
+        }
+        
+        // Calculate exclusion color (opposite color)
+        const exclusionR = 255 - r
+        const exclusionG = 255 - g
+        const exclusionB = 255 - b
+        
+        // Convert to hex
+        const exclusionColor = `#${((1 << 24) + (exclusionR << 16) + (exclusionG << 8) + exclusionB).toString(16).slice(1)}`
+        
+        setCursorColor(exclusionColor)
+      } else {
+        // Default to brand red when no element found
+        setCursorColor('#FE5454')
       }
     }
 
     window.addEventListener('mousemove', updateMousePosition)
     window.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseenter', handleMouseEnter)
-    document.addEventListener('mouseleave', handleMouseLeave)
     document.addEventListener('mousedown', handleMouseDown)
     document.addEventListener('mouseup', handleMouseUp)
+    
+    // Start the trailing animation
+    animationId = requestAnimationFrame(animateTrail)
 
     return () => {
       window.removeEventListener('mousemove', updateMousePosition)
       window.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseenter', handleMouseEnter)
-      document.removeEventListener('mouseleave', handleMouseLeave)
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('mouseup', handleMouseUp)
+      cancelAnimationFrame(animationId)
     }
-  }, [mouseX, mouseY])
+  }, [mousePos.x, mousePos.y])
 
-  // Hide cursor on mobile
-  if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+  // Don't render until mounted (prevents hydration errors)
+  if (!isMounted) {
     return null
   }
 
   return (
-    <motion.div
-      ref={cursorRef}
-      className="custom-cursor fixed pointer-events-none z-[9999] mix-blend-difference"
-      style={{
-        x: cursorX,
-        y: cursorY,
-        scale: isHovering ? scale : 1,
-        rotate: isHovering ? rotate : 0,
-      }}
-      animate={{
-        scale: isClicking ? 0.8 : 1,
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 500,
-        damping: 28,
-        mass: 0.5,
-      }}
-    >
-      {/* Main cursor dot */}
-      <motion.div
-        className="cursor-dot w-2 h-2 bg-accent rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-        animate={{
-          scale: isHovering ? 1.5 : 1,
-          opacity: isHovering ? 1 : 0.8,
+    <>
+      {/* Trailing circle - smooth lag effect */}
+      <div
+        className="fixed pointer-events-none z-[9998]"
+        style={{
+          left: trailPos.x,
+          top: trailPos.y,
+          transform: 'translate(-50%, -50%)',
         }}
-      />
-      
-      {/* Outer ring */}
-      <motion.div
-        className="cursor-ring w-10 h-10 border-2 border-accent rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-        animate={{
-          scale: isHovering ? 1.8 : 1,
-          opacity: isHovering ? 0.6 : 0.3,
-          borderWidth: isHovering ? "3px" : "2px",
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 25,
-        }}
-      />
-      
-      {/* Glow effect */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-accent/20 blur-xl"
-        animate={{
-          scale: isHovering ? 1.5 : 0.8,
-          opacity: isHovering ? 0.4 : 0.1,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 20,
-        }}
-      />
-      
-      {/* Text indicator for interactive elements */}
-      {isHovering && (
-        <motion.div
-          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-white text-black text-xs rounded-full whitespace-nowrap"
-          initial={{ opacity: 0, y: 10, scale: 0.8 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.8 }}
-          transition={{
-            type: "spring",
-            stiffness: 500,
-            damping: 30,
+      >
+        <div
+          className={`w-12 h-12 border-2 rounded-full transition-all duration-200 ease-out ${
+            isHovering ? 'scale-150 opacity-80' : 'scale-100 opacity-60'
+          }`}
+          style={{
+            borderColor: cursorColor,
           }}
-        >
-          {isClicking ? 'Click!' : 'Hover'}
-        </motion.div>
-      )}
-    </motion.div>
+        />
+      </div>
+
+      {/* Main cursor dot - immediate response */}
+      <div
+        className="fixed pointer-events-none z-[9999]"
+        style={{
+          left: mousePos.x,
+          top: mousePos.y,
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <div
+          className={`w-2.5 h-2.5 rounded-full transition-all duration-100 ease-out ${
+            isHovering ? 'scale-200' : isClicking ? 'scale-50' : 'scale-100'
+          }`}
+          style={{
+            backgroundColor: cursorColor,
+          }}
+        />
+      </div>
+    </>
   )
 }

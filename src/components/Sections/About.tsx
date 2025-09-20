@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform, useInView } from 'framer-motion'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 import { Download, ArrowRight, Sparkles, Code, Palette, Camera } from 'lucide-react'
@@ -8,8 +8,13 @@ import { Download, ArrowRight, Sparkles, Code, Palette, Camera } from 'lucide-re
 export default function About() {
   const containerRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
+  const [isClient, setIsClient] = useState(false)
   const { scrollYProgress } = useScroll()
   const isInView = useInView(containerRef, { once: true, margin: "-100px" })
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
   
   const y = useTransform(scrollYProgress, [0, 1], [0, -100])
   const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [1, 1, 0.5, 0])
@@ -51,7 +56,7 @@ export default function About() {
       id="about"
       ref={containerRef}
       className="relative min-h-screen bg-gradient-to-b from-black via-dark-gray to-black py-20 overflow-hidden"
-      style={{ y, opacity, scale }}
+      style={isClient ? { y, opacity, scale } : {}}
     >
       {/* Background Elements */}
       <div className="absolute inset-0 z-0">
@@ -216,29 +221,31 @@ export default function About() {
       </div>
 
       {/* Floating Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-accent/30 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.3, 1, 0.3],
-              scale: [1, 1.5, 1],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
-      </div>
+      {isClient && (
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-accent/30 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, -20, 0],
+                opacity: [0.3, 1, 0.3],
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
+      )}
     </motion.section>
   )
 }

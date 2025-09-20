@@ -13,12 +13,12 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
   useEffect(() => {
     const duration = 3000 // 3 seconds total
-    const interval = duration / 100 // 30ms per increment
-    const increment = 100 / (duration / interval) // Calculate increment per step
+    const totalSteps = 100
+    const interval = duration / totalSteps // 30ms per increment
 
     const timer = setInterval(() => {
       setCount((prevCount) => {
-        const newCount = prevCount + increment
+        const newCount = prevCount + 1
         if (newCount >= 100) {
           clearInterval(timer)
           return 100
@@ -41,6 +41,16 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
       return () => clearTimeout(timer)
     }
   }, [count, onComplete])
+
+  // Fallback: ensure loading completes after 3 seconds regardless
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      setIsVisible(false)
+      onComplete()
+    }, 3000)
+    
+    return () => clearTimeout(fallbackTimer)
+  }, [onComplete])
 
   return (
     <AnimatePresence>

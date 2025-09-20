@@ -26,6 +26,12 @@ type Props = {
   rippleFreq: number;
   rippleDamp: number;
   maxDPR: number;
+  revealEnabled?: boolean;
+  // Water ripple controls
+  waterRippleSensitivity?: number;
+  waterRippleStrength?: number;
+  waterRippleRadius?: number;
+  waterRippleLifetime?: number;
 };
 
 export default function RippleReveal(p: Props) {
@@ -35,7 +41,11 @@ export default function RippleReveal(p: Props) {
 
   // make sure canvas is transparent; text is above
   useEffect(() => {
-    gl.setClearColor(0x000000, 0); // alpha 0
+    try {
+      gl.setClearColor(0x000000, 0); // alpha 0
+    } catch (error) {
+      console.warn('WebGL clear color error:', error);
+    }
   }, [gl]);
 
   // load portrait
@@ -220,6 +230,10 @@ export default function RippleReveal(p: Props) {
       uResolution: { value: new THREE.Vector2(1, 1) },
       uHasImage: { value: tex ? 1 : 0 },
       uHasText: { value: textTex ? 1 : 0 },
+      uRevealEnabled: { value: p.revealEnabled !== false ? 1 : 0 },
+      uWaterRipples: { value: new Float32Array(80) }, // 20 ripples * 4 values (x, y, time, strength)
+      uWaterRippleCount: { value: 0 },
+      uWaterRippleRadius: { value: p.waterRippleRadius || 0.08 },
     };
     compU.current = uniforms;
     return new THREE.ShaderMaterial({
@@ -237,6 +251,10 @@ export default function RippleReveal(p: Props) {
   const prev = useRef({ x: -10, y: -10 });
   const trail = useRef<Array<{x: number, y: number, time: number}>>([]);
   const maxTrailLength = 8;
+  
+  // Water ripple state
+  const waterRipples = useRef<Array<{x: number, y: number, time: number, strength: number}>>([]);
+  const maxWaterRipples = 20;
 
   useEffect(() => {
     const el = (gl.domElement as HTMLCanvasElement);
@@ -269,6 +287,28 @@ export default function RippleReveal(p: Props) {
       
       // Add to trail
       trail.current.push({ x: uv.x, y: uv.y, time: Date.now() });
+      
+      // Add water ripple on movement
+      const movementDistance = Math.sqrt(
+        Math.pow(uv.x - prev.current.x, 2) + Math.pow(uv.y - prev.current.y, 2)
+      );
+      
+      const sensitivity = p.waterRippleSensitivity || 0.002;
+      const maxStrength = p.waterRippleStrength || 0.3;
+      
+      if (movementDistance > sensitivity) {
+        waterRipples.current.push({
+          x: uv.x,
+          y: uv.y,
+          time: Date.now(),
+          strength: Math.min(movementDistance * 3, maxStrength)
+        });
+        
+        // Limit water ripples
+        if (waterRipples.current.length > maxWaterRipples) {
+          waterRipples.current = waterRipples.current.slice(-maxWaterRipples);
+        }
+      }
       
       // Limit trail length
       if (trail.current.length > maxTrailLength) {
@@ -306,6 +346,8 @@ export default function RippleReveal(p: Props) {
 
   useFrame((state, dt) => {
     if (!rta.current || !rtb.current) return;
+    
+    try {
 
     // PASS A — decay + brush into rta
     brushU.current.uPrev.value = rtb.current.texture;
@@ -345,10 +387,31 @@ export default function RippleReveal(p: Props) {
     state.gl.render(scene, cam);
     state.gl.setRenderTarget(null);
 
+    // Update water ripples (remove old ones)
+    const currentTime = Date.now();
+    const lifetime = p.waterRippleLifetime || 1500;
+    waterRipples.current = waterRipples.current.filter(ripple => currentTime - ripple.time < lifetime);
+    
+    // Convert water ripples to array for shader
+    const rippleArray = new Float32Array(80);
+    let rippleCount = 0;
+    waterRipples.current.forEach((ripple, index) => {
+      if (index < 20) {
+        rippleArray[index * 4] = ripple.x;
+        rippleArray[index * 4 + 1] = ripple.y;
+        rippleArray[index * 4 + 2] = (currentTime - ripple.time) / lifetime; // normalized age
+        rippleArray[index * 4 + 3] = ripple.strength;
+        rippleCount++;
+      }
+    });
+
     // PASS B — composite to screen
     compU.current.uMask.value = rta.current.texture;
     compU.current.uHasImage.value = tex ? 1 : 0;
     compU.current.uHasText.value = textTex ? 1 : 0;
+    compU.current.uRevealEnabled.value = p.revealEnabled !== false ? 1 : 0;
+    compU.current.uWaterRipples.value = rippleArray;
+    compU.current.uWaterRippleCount.value = rippleCount;
     compU.current.uTime.value += dt;
     (quad.material as any) = compMat;
     state.gl.render(scene, cam);
@@ -357,6 +420,10 @@ export default function RippleReveal(p: Props) {
     const tmp = rta.current;
     rta.current = rtb.current!;
     rtb.current = tmp!;
+    
+    } catch (error) {
+      console.warn('RippleReveal render error:', error);
+    }
   }, 1);
 
   return null;
@@ -425,6 +492,10 @@ uniform float uRippleDamp;
 uniform vec2  uResolution;
 uniform int   uHasImage;
 uniform int   uHasText;
+uniform int   uRevealEnabled;
+uniform float uWaterRipples[80]; // 20 ripples * 4 values
+uniform int   uWaterRippleCount;
+uniform float uWaterRippleRadius;
 
 vec3 sampleCA(vec2 uv, float ca){
   vec2 off = vec2(ca, 0.0);
@@ -440,10 +511,10 @@ void main(){
   // Website background color
   vec3 bg = vec3(0.043, 0.043, 0.043); // #0B0B0B
 
-  // Sample text texture at original size
+  // Sample text texture at original size (NO water ripples on text)
   vec3 textCol = bg;
   if(uHasText == 1){
-    // Map UV coordinates directly to text texture (no scaling)
+    // Map UV coordinates directly to text texture (no scaling, no distortion)
     vec2 textUV = vUv;
     if(textUV.x >= 0.0 && textUV.x <= 1.0 && textUV.y >= 0.0 && textUV.y <= 1.0){
       textCol = texture2D(uText, textUV).rgb;
@@ -451,7 +522,9 @@ void main(){
   }
 
   vec3 col = textCol;
-  if(uHasImage == 1){
+  
+  // Only apply reveal effect if enabled
+  if(uRevealEnabled == 1 && uHasImage == 1){
     vec2 texel = 1.0 / uResolution;
     float mL = texture2D(uMask, vUv - vec2(texel.x, 0.0)).r;
     float mR = texture2D(uMask, vUv + vec2(texel.x, 0.0)).r;
@@ -465,13 +538,44 @@ void main(){
     float ring = sin(uTime * 6.0 + (mR+mL+mT+mB) * uRippleFreq) * exp(-length(grad) * uRippleDamp);
     vec2 ripple = grad * ampUV * 12.0 + ring * ampUV * 0.8;
 
-    vec2 uv = vUv + ripple * mask;
+    // Only cursor-responsive water ripples (no continuous movement)
+    vec2 cursorRipples = vec2(0.0);
+    for(int i = 0; i < 20; i++) {
+      if(i >= uWaterRippleCount) break;
+      
+      float rippleX = uWaterRipples[i * 4];
+      float rippleY = uWaterRipples[i * 4 + 1];
+      float rippleAge = uWaterRipples[i * 4 + 2];
+      float rippleStrength = uWaterRipples[i * 4 + 3];
+      
+      if(rippleAge < 1.0) { // Only active ripples
+        float dist = distance(vUv, vec2(rippleX, rippleY));
+        float rippleRadius = uWaterRippleRadius * (1.0 - rippleAge);
+        
+        if(dist < rippleRadius) {
+          float rippleIntensity = (1.0 - dist / rippleRadius) * (1.0 - rippleAge) * rippleStrength;
+          vec2 rippleDir = normalize(vUv - vec2(rippleX, rippleY));
+          cursorRipples += rippleDir * rippleIntensity * 0.02; // Much gentler ripple effect
+        }
+      }
+    }
+    
+    vec2 totalRipple = ripple + cursorRipples;
+    vec2 uv = vUv + totalRipple * mask;
     float ca = uChroma * mask;
     col = sampleCA(uv, ca);
   }
 
-  // When mask is high (hovered), show image; when low, show text on bg
-  vec3 outCol = mix(textCol, col, smoothstep(0.0, 1.0, mask));
+  // When reveal is disabled, always show text; when enabled, use mask to blend
+  vec3 outCol;
+  if(uRevealEnabled == 1) {
+    // Normal reveal behavior: mix text and image based on mask
+    outCol = mix(textCol, col, smoothstep(0.0, 1.0, mask));
+  } else {
+    // Reveal disabled: always show text (no image reveal)
+    outCol = textCol;
+  }
+  
   gl_FragColor = vec4(outCol, 1.0);
 }
 `;
