@@ -120,7 +120,7 @@ export default function FloatingBottomNav() {
             onClick={() => setIsOpen(false)}
           >
             <motion.div
-              className="absolute bottom-32 left-[35%] transform -translate-x-1/2 w-[600px]"
+              className="absolute bottom-32 left-[calc(35%-14px)] transform -translate-x-1/2 w-[600px]"
               style={{
                 background: 'rgba(255, 255, 255, 0.10)',
                 backdropFilter: 'blur(40px)',

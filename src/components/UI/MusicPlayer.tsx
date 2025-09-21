@@ -133,7 +133,7 @@ export default function MusicPlayer() {
       </audio>
 
       <motion.div
-        className="fixed bottom-6 left-6 z-50"
+        className="fixed bottom-6 left-10 z-50"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 1 }}

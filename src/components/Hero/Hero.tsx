@@ -7,21 +7,59 @@ import RippleReveal from "../RippleReveal";
 export default function Hero() {
   const [revealEnabled, setRevealEnabled] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [showreelCoverage, setShowreelCoverage] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  // Listen for Showreel coverage updates
+  useEffect(() => {
+    const handleShowreelUpdate = (event: CustomEvent) => {
+      setShowreelCoverage(event.detail.coverage);
+    };
+
+    window.addEventListener('showreel-coverage-update', handleShowreelUpdate as EventListener);
+    return () => window.removeEventListener('showreel-coverage-update', handleShowreelUpdate as EventListener);
+  }, []);
+
+  // Calculate exit animation based on Showreel coverage
+  const exitThreshold = 0.8; // Start exit animation at 80% coverage (when fully covered)
+  const exitProgress = Math.max(0, (showreelCoverage - exitThreshold) / (1 - exitThreshold));
+  const exitY = exitProgress * -120; // Move up by 120vh to ensure completely off-screen
+
+  // Smooth exit animation with better easing
+  const exitYValue = exitProgress > 0 ? exitY : 0;
+
   const handleCanvasClick = () => {
-    setRevealEnabled(!revealEnabled);
+    // Only allow toggle if Showreel hasn't fully covered the screen
+    const showreelCoverageThreshold = 0.8;
+    if (showreelCoverage < showreelCoverageThreshold) {
+      console.log('Canvas clicked! Current revealEnabled:', revealEnabled);
+      setRevealEnabled(!revealEnabled);
+    } else {
+      console.log('Toggle disabled - Showreel fully covers screen');
+    }
   };
 
   return (
-    <section className="relative h-[100svh] bg-[#0B0B0B] overflow-hidden">
+    <section 
+      className={`fixed inset-0 h-[100svh] bg-[#0B0B0B] overflow-hidden select-none hero-protection z-10 ${
+        showreelCoverage > 0.2 ? 'pointer-events-none' : 'pointer-events-auto'
+      }`}
+      style={{
+        transform: `translateY(${exitYValue}vh)`,
+        transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+      onClick={handleCanvasClick}
+    >
       {/* Canvas covers the entire viewport */}
       {isClient && (
         <Canvas
-          className="absolute inset-0 z-0 pointer-events-auto"
+          className="absolute inset-0 z-0 pointer-events-auto select-none"
+          onContextMenu={(e) => e.preventDefault()}
           gl={(canvas) => {
             const renderer = new THREE.WebGLRenderer({
               canvas,
@@ -47,11 +85,12 @@ export default function Hero() {
             <RippleReveal
               imageUrl="/rosh-placeholder.jpg"
               textElements={[
-                { text: "i am", x: 60, y: 200, size: 48, color: "#FFF", font: "Teko", fontWeight: 100 },
-                { text: "ROSH", x: 600, y: 200, size: 48, color: "#FFF", font: "Teko", fontWeight: 100 },
-                { text: "a", x: 1155, y: 200, size: 48, color: "#FFF", font: "Teko", fontWeight: 100 },
-                { text: "DESIGN ENGINEER", x: 600, y: 300, size: 170, color: "#FE5454", font: "Teko", fontWeight: 700, letterSpacing: "1.04px" },
-              
+                { text: "i am", x: 40, y: 200, size: 24, color: "#FFF", font: "Teko", fontWeight: 100 },
+                { text: "ROSH", x: 600, y: 200, size: 30, color: "#FFF", font: "Teko", fontWeight: 100 },
+                { text: "a", x: 1170, y: 200, size: 24, color: "#FFF", font: "Teko", fontWeight: 100 },
+                { text: "DESIGN ENGINEER", x: 600, y: 300, size: 173, color: "#FE5454", font: "Teko", fontWeight: 700, letterSpacing: "1.04px" },
+                { text: "\" Think Globally. Act Locally. \"", x: 1105, y: 345, size: 16, color: "#FFF", font: "Teko", fontWeight: 50 },
+               
               ]}
               chroma={0.002}
               decay={0.975}

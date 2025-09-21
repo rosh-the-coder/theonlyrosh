@@ -56,7 +56,7 @@ export default function About() {
       id="about"
       ref={containerRef}
       className="relative min-h-screen bg-gradient-to-b from-black via-dark-gray to-black py-20 overflow-hidden"
-      style={isClient ? { y, opacity, scale } : {}}
+      style={isClient ? { y, opacity, scale, zIndex: 2 } : { zIndex: 2 }}
     >
       {/* Background Elements */}
       <div className="absolute inset-0 z-0">

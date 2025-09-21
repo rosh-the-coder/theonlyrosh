@@ -6,6 +6,9 @@ import Hero from "@/components/Hero/Hero";
 import Navigation from "@/components/Navigation/Navigation";
 import FloatingBottomNav from "@/components/Navigation/FloatingBottomNav";
 import About from "@/components/Sections/About";
+import Showreel from "@/components/Sections/Showreel";
+import Intro_Spooky_Pookie from "@/components/Sections/Intro_Spooky-Pookie";
+import SPWebgl from "@/components/Sections/SP-webgl";
 import Work from "@/components/Sections/Work";
 import Skills from "@/components/Sections/Skills";
 import Experience from "@/components/Sections/Experience";
@@ -58,10 +61,14 @@ export default function Page() {
       {isLoading && <LoadingScreen onComplete={handleLoadingComplete} />}
       <main 
         className={isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500'}
+        style={{ position: 'relative' }}
         suppressHydrationWarning
       >
         <Hero />
         <Navigation />
+        <Showreel />
+        <Intro_Spooky_Pookie />
+        <SPWebgl />
         <About />
         <Work />
         <Skills />

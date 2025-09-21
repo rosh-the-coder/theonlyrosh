@@ -6,6 +6,24 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  // Headers for Unity WebGL build files
+  async headers() {
+    return [
+      {
+        source: '/webgl_spookie pookie/Build/:path*',
+        headers: [
+          {
+            key: 'Content-Encoding',
+            value: 'br',
+          },
+          {
+            key: 'Content-Type',
+            value: 'application/octet-stream',
+          },
+        ],
+      },
+    ]
+  },
   webpack: (config) => {
     config.module.rules.push({
       test: /\.(glb|gltf)$/,

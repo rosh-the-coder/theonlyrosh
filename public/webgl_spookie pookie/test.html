@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Spookie Pookie - Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #unity-canvas {
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+    <script src="Build/webgl 21-09-2025.loader.js"></script>
+    <script>
+        console.log('Starting Unity WebGL test...');
+        
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            var meta = document.createElement('meta');
+            meta.name = 'viewport';
+            meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+            document.getElementsByTagName('head')[0].appendChild(meta);
+
+            var canvas = document.querySelector("#unity-canvas");
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+            canvas.style.position = "fixed";
+            document.body.style.textAlign = "left";
+        }
+
+        // Load Unity with uncompressed files
+        const loadUnity = () => {
+            try {
+                createUnityInstance(document.querySelector("#unity-canvas"), {
+                    dataUrl: "Build/webgl 21-09-2025.data",
+                    frameworkUrl: "Build/webgl 21-09-2025.framework.js", 
+                    codeUrl: "Build/webgl 21-09-2025.wasm",
+                    streamingAssetsUrl: "StreamingAssets",
+                    companyName: "Rosh's",
+                    productName: "Spookie Pookie",
+                    productVersion: "1.0",
+                }).then((unityInstance) => {
+                    console.log('Unity game loaded successfully!');
+                }).catch((error) => {
+                    console.error('Unity game failed to load:', error);
+                    // Show error message
+                    document.querySelector("#unity-canvas").style.background = "#333";
+                    document.querySelector("#unity-canvas").innerHTML = `
+                        <div style="color: white; text-align: center; padding: 20px; font-family: Arial;">
+                            <h3>Unity WebGL Game</h3>
+                            <p>Error loading game. Check console for details.</p>
+                            <p style="font-size: 12px; color: #ccc;">Check if uncompressed files exist.</p>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error initializing Unity:', error);
+            }
+        };
+
+        // Load Unity after a short delay
+        setTimeout(loadUnity, 100);
+    </script>
+</body>
+</html>

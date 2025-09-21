@@ -81,7 +81,7 @@ export default function Contact() {
       id="contact"
       ref={containerRef}
       className="relative min-h-screen bg-gradient-to-b from-black via-dark-gray to-black py-20 overflow-hidden"
-      style={{ y, opacity }}
+      style={{ y, opacity, zIndex: 2 }}
     >
       {/* Background Elements */}
       <div className="absolute inset-0 z-0">

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Test - Direct Access</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #unity-canvas {
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            display: block;
+            margin: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .info {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="unity-canvas" width="670" height="418" tabindex="-1" style="width: 670px; height: 418px; background: #80132C; display: block;"></canvas>
+    
+    <script src="webgl_spookie pookie/Build/webgl 21-09-2025.loader.js"></script>
+    <script>
+        console.log('Starting Unity WebGL direct test...');
+        console.log('Canvas element:', document.querySelector("#unity-canvas"));
+        console.log('Canvas dimensions:', document.querySelector("#unity-canvas").width, 'x', document.querySelector("#unity-canvas").height);
+        
+        createUnityInstance(document.querySelector("#unity-canvas"), {
+            dataUrl: "webgl_spookie pookie/Build/webgl 21-09-2025.data",
+            frameworkUrl: "webgl_spookie pookie/Build/webgl 21-09-2025.framework.js",
+            codeUrl: "webgl_spookie pookie/Build/webgl 21-09-2025.wasm",
+            streamingAssetsUrl: "webgl_spookie pookie/StreamingAssets",
+            companyName: "Rosh's",
+            productName: "Spookie Pookie",
+            productVersion: "1.0",
+            matchWebGLToCanvasSize: false, // Don't match to canvas size
+            devicePixelRatio: 1,
+        }).then((unityInstance) => {
+            console.log('Unity instance created successfully!');
+            console.log('Unity instance:', unityInstance);
+            
+            // Force Unity to resize to canvas
+            if (unityInstance && unityInstance.SendMessage) {
+                console.log('Attempting to resize Unity to canvas...');
+                // Try to send a resize message to Unity
+                try {
+                    unityInstance.SendMessage('GameManager', 'OnWebGLResize', '670,418');
+                } catch (e) {
+                    console.log('SendMessage failed, trying alternative approach');
+                }
+            }
+        }).catch((error) => {
+            console.error('Unity instance creation failed:', error);
+        });
+    </script>
+</body>
+</html>
