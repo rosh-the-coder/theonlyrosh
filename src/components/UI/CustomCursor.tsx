@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 export default function CustomCursor() {
   const [isMounted, setIsMounted] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [trailPos, setTrailPos] = useState({ x: 0, y: 0 })
   const [isHovering, setIsHovering] = useState(false)
@@ -12,6 +13,8 @@ export default function CustomCursor() {
 
   useEffect(() => {
     setIsMounted(true)
+    // Check if it's a mobile device
+    setIsMobile(window.innerWidth <= 768)
     
     let animationId: number
     
@@ -130,6 +133,11 @@ export default function CustomCursor() {
 
   // Don't render until mounted (prevents hydration errors)
   if (!isMounted) {
+    return null
+  }
+
+  // Don't render on mobile devices
+  if (isMobile) {
     return null
   }
 

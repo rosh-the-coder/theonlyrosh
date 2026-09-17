@@ -98,3 +98,18 @@ jspm_packages/
 # TernJS port file
 .tern-port
 .vercel
+
+# Large media files (exclude from Git)
+public/video editing/videos/*.mp4
+public/video editing/videos/*.MOV
+public/video editing/videos/*.m4v
+public/videos/theonlyrosh-showreel.mp4
+public/unity/
+public/webgl_spookie pookie/
+
+# Keep only essential showreel
+!public/videos/theonlyrosh-showreel-fixed.mp4
+
+# Large local-only media / notes (not for Git or Vercel)
+public/videos/web fin.mp4
+videos/

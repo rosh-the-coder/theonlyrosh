@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Pause, Volume2, VolumeX, Music } from 'lucide-react'
+import { useAudioManager } from '@/contexts/AudioContext'
 
 export default function MusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -15,6 +16,7 @@ export default function MusicPlayer() {
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const sfxRef = useRef<HTMLAudioElement | null>(null)
+  const audioManager = useAudioManager()
 
   // Initialize audio when component mounts
   useEffect(() => {
@@ -48,26 +50,41 @@ export default function MusicPlayer() {
       if (isPlaying) {
         audioRef.current.pause()
         setIsPlaying(false)
+        audioManager.releaseAudio('music-player')
       } else {
-        setIsLoading(true)
-        setHasError(false)
-        
-        // Load the audio if it hasn't been loaded yet
-        if (audioRef.current.readyState === 0) {
-          audioRef.current.load()
+        // Request audio permission from manager
+        if (audioManager.requestAudioPlay('music-player')) {
+          setIsLoading(true)
+          setHasError(false)
+          
+          // Load the audio if it hasn't been loaded yet
+          if (audioRef.current.readyState === 0) {
+            audioRef.current.load()
+          }
+          
+          await audioRef.current.play()
+          setIsPlaying(true)
+          setIsLoading(false)
         }
-        
-        await audioRef.current.play()
-        setIsPlaying(true)
-        setIsLoading(false)
       }
     } catch (error) {
       console.error('Error playing audio:', error)
       setHasError(true)
       setIsLoading(false)
       setIsPlaying(false)
+      audioManager.releaseAudio('music-player')
     }
   }
+
+  // Pause when another audio source becomes active
+  useEffect(() => {
+    if (audioManager.activeAudio !== 'music-player' && audioManager.activeAudio !== null && isPlaying) {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        setIsPlaying(false)
+      }
+    }
+  }, [audioManager.activeAudio, isPlaying])
 
   const toggleMute = () => {
     if (!audioRef.current) return
@@ -133,7 +150,8 @@ export default function MusicPlayer() {
       </audio>
 
       <motion.div
-        className="fixed bottom-6 left-10 z-50"
+        className="fixed bottom-6 left-10 hidden md:block"
+        style={{ zIndex: 10000 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 1 }}
@@ -144,29 +162,37 @@ export default function MusicPlayer() {
           onMouseLeave={() => setIsHovered(false)}
         >
           {/* Main Player Button */}
-          <motion.button
-            className={`w-14 h-14 backdrop-blur-sm border rounded-full flex items-center justify-center text-white transition-colors ${
-              hasError 
-                ? 'bg-red-500/80 border-red-400/20 hover:bg-red-500/90' 
-                : 'bg-black/80 border-white/20 hover:bg-white/10'
-            }`}
-            onClick={togglePlay}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <motion.div
-                className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-            ) : isPlaying ? (
-              <Pause className="w-6 h-6" />
-            ) : (
-              <Play className="w-6 h-6 ml-0.5" />
-            )}
-          </motion.button>
+          <div className="relative group">
+            <motion.button
+              className={`w-14 h-14 backdrop-blur-sm border rounded-full flex items-center justify-center text-white transition-colors ${
+                hasError 
+                  ? 'bg-red-500/80 border-red-400/20 hover:bg-red-500/90' 
+                  : 'bg-black/80 border-white/20 hover:bg-white/10'
+              }`}
+              onClick={togglePlay}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <motion.div
+                  className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+              ) : isPlaying ? (
+                <Pause className="w-6 h-6" />
+              ) : (
+                <Play className="w-6 h-6 ml-0.5" />
+              )}
+            </motion.button>
+            
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              Are you a recruiter?
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
+            </div>
+          </div>
 
         {/* Volume Control */}
         <AnimatePresence>

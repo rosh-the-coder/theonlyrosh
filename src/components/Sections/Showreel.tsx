@@ -3,14 +3,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Volume2, VolumeX } from 'lucide-react'
+import { useAudioManager } from '@/contexts/AudioContext'
 
 export default function Showreel() {
   const [isVisible, setIsVisible] = useState(false)
-  const [isMuted, setIsMuted] = useState(true) // Default: no sound
-  const [userToggledAudio, setUserToggledAudio] = useState(false) // Track if user manually toggled audio
-  const [audioEnabled, setAudioEnabled] = useState(false) // Track if audio should be enabled
+  const [isMuted, setIsMuted] = useState(true)
+  const [audioEnabled, setAudioEnabled] = useState(false)
+  const [isInViewport, setIsInViewport] = useState(false)
+  // Initialize isMobile synchronously to prevent source switching
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768;
+    }
+    return false;
+  })
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const audioManager = useAudioManager()
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start 0.3", "end 0.1"]
@@ -59,10 +68,10 @@ export default function Showreel() {
     [0, 0, 0, 0, exitDistance]
   )
   
-  // OPACITY: Fade in during entry, stay visible during static, fade out during exit
+  // OPACITY: Fully visible during entry, stay visible during static, fade out during exit
   const opacity = useTransform(scrollYProgress, 
     [0, entryStart, entryEnd, staticStart, staticEnd, exitStart, exitEnd], 
-    [0, 0, 1, 1, 1, 1, 0] // Start invisible, fade in, stay visible, fade out
+    [1, 1, 1, 1, 1, 1, 0] // Start fully visible, stay visible, fade out
   )
   
   // SCALE: Grow during entry, stay full size during static and exit
@@ -71,127 +80,128 @@ export default function Showreel() {
     [0.3, 1, 1, 1, 1, 1] // Grow, stay full size, NO shrinking during exit
   )
   
+  // POINTER EVENTS: Auto when visible, none when exited
+  const pointerEvents = useTransform(scrollYProgress,
+    [0, exitStart - 0.01, exitStart],
+    ['auto', 'auto', 'none']
+  )
+  
+  // Update mobile state on resize only
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Calculate when Showreel fully covers the screen
   const showreelCoverageThreshold = staticStart
   const isShowreelFullyCovered = scrollYProgress.get() > showreelCoverageThreshold
 
-  // Sound toggle function - only works when showreel is visible
+  // Sound toggle function - ALWAYS works when showreel is visible
   const toggleSound = () => {
-    // Don't allow toggle when showreel is off-screen
-    if (scrollYProgress.get() >= exitEnd) {
-      console.log('🔇 Audio toggle disabled - showreel section is off-screen')
-      return
+    const progress = scrollYProgress.get();
+    // Allow toggle whenever showreel is in viewing area
+    const isInViewingArea = progress >= entryStart && progress < exitEnd;
+    
+    if (!isInViewingArea) {
+      console.log('Cannot toggle - showreel not in viewing area');
+      return;
     }
     
     if (videoRef.current) {
-      const newAudioEnabled = !audioEnabled
-      setAudioEnabled(newAudioEnabled)
-      setUserToggledAudio(true) // Mark that user manually toggled
-      setHasAutoEnabled(false) // Reset auto-enabled state
+      const newAudioEnabled = !audioEnabled;
+      console.log('Toggle audio:', newAudioEnabled);
       
       if (newAudioEnabled) {
-        // Enabling audio
-        console.log('🎵 User enabled audio')
-        videoRef.current.muted = false
-        videoRef.current.volume = 0.8
-        setIsMuted(false)
-        
-        // Ensure video is playing
-        const playPromise = videoRef.current.play()
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('Video play failed:', error)
-          })
+        // Request audio from manager
+        if (audioManager.requestAudioPlay('showreel')) {
+          setAudioEnabled(true);
+          videoRef.current.muted = false;
+          videoRef.current.volume = 0.8;
+          setIsMuted(false);
+          console.log('Audio enabled');
         }
       } else {
-        // Disabling audio
-        console.log('🔇 User disabled audio')
-        videoRef.current.muted = true
-        setIsMuted(true)
+        // Release audio
+        audioManager.releaseAudio('showreel');
+        setAudioEnabled(false);
+        videoRef.current.muted = true;
+        setIsMuted(true);
+        console.log('Audio disabled');
       }
     }
   }
 
-  // Auto-enable audio when showreel becomes visible (only once on first reveal)
-  const [hasAutoEnabled, setHasAutoEnabled] = useState(false)
-  
-  useEffect(() => {
-    if (isVisible && !userToggledAudio && !hasAutoEnabled && videoRef.current) {
-      // Only auto-enable once on first reveal
-      setTimeout(() => {
-        if (videoRef.current && isVisible && !userToggledAudio && !hasAutoEnabled) {
-          setAudioEnabled(true)
-          videoRef.current.muted = false
-          videoRef.current.volume = 0.8
-          setIsMuted(false)
-          setHasAutoEnabled(true) // Mark as auto-enabled to prevent future auto-enabling
-          console.log('🎵 Auto-enabled audio for showreel visibility (first time only)')
-        }
-      }, 500) // Small delay to ensure smooth transition
-    }
-  }, [isVisible, userToggledAudio, hasAutoEnabled])
-
-  // Scroll-based volume control
+  // FORCE PAUSE audio when not visible - THIS ACTUALLY STOPS THE AUDIO
   useEffect(() => {
     const unsubscribe = scrollYProgress.on('change', (latest) => {
-      if (videoRef.current) {
-        // Only control audio if user has enabled it
-        if (audioEnabled) {
-          // Calculate volume based on section visibility
-          let volume = 0.8 // Base volume
-          
-          if (latest < entryStart) {
-            // Before entry - no audio
-            volume = 0
-          } else if (latest >= entryStart && latest < staticStart) {
-            // During entry - fade in audio
-            const entryProgress = (latest - entryStart) / (staticStart - entryStart)
-            volume = 0.8 * entryProgress
-          } else if (latest >= staticStart && latest < exitStart) {
-            // During static - full volume
-            volume = 0.8
-          } else if (latest >= exitStart) {
-            // During exit - fade out audio
-            const exitProgress = (latest - exitStart) / (exitEnd - exitStart)
-            volume = 0.8 * (1 - exitProgress)
-          }
-          
-          // Apply volume and unmute if needed
-          if (volume > 0) {
-            videoRef.current.muted = false
-            videoRef.current.volume = Math.max(0, Math.min(0.8, volume))
-            setIsMuted(false)
-          } else {
-            // Fade out complete - mute but keep audioEnabled true for restoration
-            videoRef.current.muted = true
-            setIsMuted(true)
-          }
-        } else {
-          // User has disabled audio - keep it muted
-          videoRef.current.muted = true
-          setIsMuted(true)
+      if (!videoRef.current) return;
+      
+      const isVisible = latest >= entryStart && latest < exitEnd;
+      
+      if (!isVisible) {
+        // PAUSE THE VIDEO - this actually stops audio from playing
+        if (!videoRef.current.paused) {
+          videoRef.current.pause();
         }
+        videoRef.current.muted = true;
+        videoRef.current.volume = 0;
+        setIsMuted(true);
+        return;
       }
-    })
-    return unsubscribe
+      
+      // Resume playing when visible
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
+      
+      // Control volume based on audioEnabled
+      if (audioEnabled) {
+        let volume = 0.8;
+        
+        if (latest >= entryStart && latest < staticStart) {
+          const progress = (latest - entryStart) / (staticStart - entryStart);
+          volume = 0.8 * progress;
+        } else if (latest >= staticStart && latest < exitStart) {
+          volume = 0.8;
+        } else if (latest >= exitStart) {
+          const progress = (latest - exitStart) / (exitEnd - exitStart);
+          volume = 0.8 * (1 - progress);
+        }
+        
+        videoRef.current.muted = false;
+        videoRef.current.volume = volume;
+        setIsMuted(false);
+      } else {
+        videoRef.current.muted = true;
+        setIsMuted(true);
+      }
+    });
+    
+    return unsubscribe;
   }, [scrollYProgress, entryStart, staticStart, exitStart, exitEnd, audioEnabled])
 
   // Initialize video when component mounts
   useEffect(() => {
     const initializeVideo = () => {
       if (videoRef.current) {
+        const video = videoRef.current;
         // Ensure video starts muted and with proper settings
-        videoRef.current.muted = true
-        videoRef.current.volume = 0.8
-        videoRef.current.loop = true
-        videoRef.current.playsInline = true
+        video.muted = true;
+        video.volume = 0.8;
+        video.loop = true;
+        video.setAttribute('loop', 'loop'); // Force loop attribute
+        video.playsInline = true;
         
         // Try to play muted video
-        const playPromise = videoRef.current.play()
+        const playPromise = video.play();
         if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('Video autoplay failed (this is normal):', error)
-          })
+          playPromise.catch(() => {
+            // Autoplay might be blocked, that's okay
+          });
         }
       }
     }
@@ -205,6 +215,55 @@ export default function Showreel() {
     return () => clearTimeout(timeoutId)
   }, [])
 
+  // AGGRESSIVE LOOP MONITORING - ensures video always loops
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      // When video is near the end, restart it
+      if (video.duration > 0 && video.currentTime >= video.duration - 0.5) {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      }
+    };
+
+    const handleEnded = () => {
+      // Backup: manually restart if loop somehow fails
+      video.loop = true;
+      video.setAttribute('loop', 'loop');
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+
+    const handlePause = () => {
+      // If video pauses unexpectedly and we're in the viewing area, restart it
+      const progress = scrollYProgress.get();
+      const isInViewingArea = progress >= entryStart && progress < exitEnd;
+      
+      if (isInViewingArea && video.currentTime > 0 && video.currentTime < video.duration) {
+        setTimeout(() => {
+          if (video.paused) {
+            video.play().catch(() => {});
+          }
+        }, 100);
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('pause', handlePause);
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('pause', handlePause);
+    };
+  }, [scrollYProgress, entryStart, exitEnd])
+
+
+  // DELETED ALL AGGRESSIVE AUTO-RESUME LOGIC
+
   // Broadcast coverage updates to Hero section
   useEffect(() => {
     const unsubscribe = scrollYProgress.on('change', (latest) => {
@@ -217,24 +276,23 @@ export default function Showreel() {
   }, [scrollYProgress]);
   
   
-  const rotate = useTransform(scrollYProgress, 
-    [0, 0.3, 0.6, 0.8, 1], 
-    [2, 1, 0, -0.5, 0]
-  )
-
+  
   useEffect(() => {
-    const handleScroll = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const isInView = rect.top < window.innerHeight && rect.bottom > 0
-        setIsVisible(isInView)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    handleScroll() // Check initial state
-    return () => window.removeEventListener('scroll', handleScroll)
+    // Use IntersectionObserver for more reliable visibility detection
+    const el = containerRef.current
+    if (!el || typeof window === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting && entry.intersectionRatio > 0.25
+        setIsVisible(visible)
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
+    )
+    observer.observe(el)
+    return () => observer.unobserve(el)
   }, [])
+
+  // (Removed redundant ensure-playback effect; handled in the main resume effect above)
 
   return (
     <section 
@@ -242,76 +300,61 @@ export default function Showreel() {
       className="relative h-screen bg-transparent"
       id="showreel"
       style={{ 
-        paddingTop: '500px', 
-        paddingBottom: '1500px' 
+        paddingTop: '300px', 
+        paddingBottom: '1200px' 
       }}
     >
-      {/* Fixed overlay that enters from right */}
-      <motion.div
-        className={`fixed inset-0 ${isShowreelFullyCovered ? 'pointer-events-auto z-20' : 'pointer-events-auto z-20'}`}
-        style={{ 
-          x, 
-          opacity,
-          scale,
-          rotate,
-          y: y,
-          transformOrigin: 'center center'
-        }}
-        transition={{
-          type: "tween",
-          ease: "easeInOut",
-          duration: 0.5
-        }}
-      >
+      {/* Fixed overlay that enters from right - Desktop only */}
+      {!isMobile && (
+        <motion.div
+          className={`fixed inset-0 z-20`}
+          style={{ 
+            x, 
+            opacity,
+            scale,
+            y: y,
+            transformOrigin: 'center center',
+            pointerEvents
+          }}
+          transition={{
+            type: "tween",
+            ease: "easeInOut",
+            duration: 0.5
+          }}
+        >
         {/* Video container with sound toggle */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative rounded-2xl overflow-hidden border border-gray-700"
+          <div className="relative rounded-xl md:rounded-2xl overflow-hidden border border-gray-700 bg-black sm:!w-[calc(100vw-40px)] sm:!h-[calc(100vh-40px)] md:!w-[calc(100vw-80px)] md:!h-[calc(100vh-80px)]"
                onClick={scrollYProgress.get() < exitEnd ? toggleSound : undefined}
                style={{
-                 width: 'calc(100vw - 80px)', // 40px padding on each side
-                 height: 'calc(100vh - 80px)', // 40px padding top/bottom
+                 width: 'calc(100vw - 16px)', // 8px padding on each side for mobile
+                 height: 'calc(100vh - 16px)', // 8px padding top/bottom for mobile
                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
                  cursor: scrollYProgress.get() < exitEnd ? 'pointer' : 'default',
-               }}>
+               }}
+               >
             {/* Video element */}
             <video
               ref={videoRef}
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${isMobile ? 'object-contain' : 'object-cover'}`}
               autoPlay
               loop
-              muted={true}
+              muted={isMuted}
               playsInline
               preload="auto"
+              webkit-playsinline="true"
+              x5-playsinline="true"
+              src={isMobile ? "/videos/theonlyrosh-showreel 9-16.mp4" : "/videos/theonlyrosh-showreel-fixed.mp4"}
             >
-              <source src="/videos/showreel-sample.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
             
-            {/* Sound toggle button */}
-            <button
-              onClick={scrollYProgress.get() < exitEnd ? toggleSound : undefined}
-              disabled={scrollYProgress.get() >= exitEnd}
-              className={`absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center text-white transition-all duration-300 backdrop-blur-sm border border-white/20 ${
-                scrollYProgress.get() < exitEnd 
-                  ? 'bg-black/70 hover:bg-black/90 cursor-pointer' 
-                  : 'bg-black/30 cursor-not-allowed opacity-50'
-              }`}
-            >
-              {!audioEnabled ? (
-                <VolumeX className="w-6 h-6" />
-              ) : (
-                <Volume2 className="w-6 h-6" />
-              )}
-            </button>
             
-            {/* Video title overlay */}
-            <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20">
-              <h3 className="text-white font-semibold text-lg">Showreel</h3>
-              <p className="text-white/70 text-sm">Click sound icon to toggle audio</p>
-            </div>
+            {/* Removed video title/description overlay per request */}
           </div>
         </div>
       </motion.div>
+      )}
     </section>
   )
 }

@@ -15,10 +15,20 @@ type TextElement = {
   lineHeight?: string;
 };
 
+type IconElement = {
+  icon: string; // Unicode character, emoji, or image path
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  isImage?: boolean; // Flag to indicate if it's an image icon
+};
+
 type Props = {
   imageUrl: string;
   text?: string;
   textElements?: TextElement[];
+  iconElements?: IconElement[];
   chroma: number;
   decay: number;
   brushRadiusPxAt1440: number;
@@ -27,6 +37,7 @@ type Props = {
   rippleDamp: number;
   maxDPR: number;
   revealEnabled?: boolean;
+  lowPowerMode?: boolean;
   // Water ripple controls
   waterRippleSensitivity?: number;
   waterRippleStrength?: number;
@@ -75,87 +86,136 @@ export default function RippleReveal(p: Props) {
 
   // create text texture
   useEffect(() => {
-    if (!p.text && !p.textElements) return;
+    if (!p.text && !p.textElements && !p.iconElements) return;
     
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Larger canvas for multiple text elements
-    canvas.width = 1200;
-    canvas.height = 600;
-    
-    // Set background to match website color
-    ctx.fillStyle = '#0B0B0B';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    if (p.textElements && p.textElements.length > 0) {
-      // Draw multiple text elements
-      p.textElements.forEach(element => {
-        // Set text style for this element
-        ctx.fillStyle = element.color;
-        const fontWeight = element.fontWeight || 'bold';
-        const letterSpacing = element.letterSpacing || 'normal';
-        const fontFamily = element.font || 'Arial, sans-serif';
-        
-        ctx.font = `${fontWeight} ${element.size}px ${fontFamily}`;
+    const createTexture = async () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: false });
+      if (!ctx) return;
+      
+      // Optimize canvas size based on device capability
+      const scale = p.lowPowerMode ? 0.75 : 1;
+      canvas.width = 1200 * scale;
+      canvas.height = 600 * scale;
+      
+      // Set background to match website color
+      ctx.fillStyle = '#0B0B0B';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      if (p.textElements && p.textElements.length > 0) {
+        // Draw multiple text elements
+        p.textElements.forEach(element => {
+          // Set text style for this element
+          ctx.fillStyle = element.color;
+          const fontWeight = element.fontWeight || 'bold';
+          const letterSpacing = element.letterSpacing || 'normal';
+          const fontFamily = element.font || 'Arial, sans-serif';
+          
+          ctx.font = `${fontWeight} ${element.size}px ${fontFamily}`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Set letter spacing if specified
+          if (letterSpacing !== 'normal') {
+            ctx.letterSpacing = letterSpacing;
+          }
+          
+          // Add text shadow for depth (only for large text)
+          if (element.size > 100) {
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+          }
+          
+          // Draw text at specified position
+          ctx.fillText(element.text, element.x, element.y);
+          
+          // Reset shadow and letter spacing for next element
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          ctx.letterSpacing = 'normal';
+        });
+      }
+      
+      if (p.iconElements && p.iconElements.length > 0) {
+        // Draw icon elements
+        for (const element of p.iconElements) {
+          if (element.isImage) {
+            // Load and draw image icon
+            try {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = element.icon;
+              });
+              
+              // Calculate position for centered image
+              const imgX = element.x - element.size / 2;
+              const imgY = element.y - element.size / 2;
+              
+              // Draw the image
+              ctx.drawImage(img, imgX, imgY, element.size, element.size);
+            } catch (error) {
+              console.warn('Failed to load icon image:', element.icon, error);
+              // Fallback to text if image fails
+              ctx.fillStyle = element.color;
+              ctx.font = `${element.size}px Arial, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('?', element.x, element.y);
+            }
+          } else {
+            // Draw text/unicode icon
+            ctx.fillStyle = element.color;
+            ctx.font = `${element.size}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw icon at specified position
+            ctx.fillText(element.icon, element.x, element.y);
+          }
+        }
+      }
+      
+      if (p.text && !p.textElements && !p.iconElements) {
+        // Draw single text element (fallback)
+        ctx.fillStyle = '#FF5353';
+        ctx.font = 'bold 120px Climate Crisis, Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        ctx.letterSpacing = '0.05em';
         
-        // Set letter spacing if specified
-        if (letterSpacing !== 'normal') {
-          ctx.letterSpacing = letterSpacing;
-        }
+        // Add text shadow for depth
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
         
-        // Add text shadow for depth (only for large text)
-        if (element.size > 100) {
-          ctx.shadowColor = 'rgba(0,0,0,0.8)';
-          ctx.shadowBlur = 4;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 2;
-        }
-        
-        // Draw text at specified position
-        ctx.fillText(element.text, element.x, element.y);
-        
-        // Reset shadow and letter spacing for next element
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.letterSpacing = 'normal';
-      });
-    } else if (p.text) {
-      // Draw single text element (fallback)
-      ctx.fillStyle = '#FF5353';
-      ctx.font = 'bold 120px Climate Crisis, Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.letterSpacing = '0.05em';
+        // Draw text centered
+        ctx.fillText(p.text, canvas.width / 2, canvas.height / 2);
+      }
       
-      // Add text shadow for depth
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 4;
-      ctx.shadowOffsetX = 2;
-      ctx.shadowOffsetY = 2;
+      // Create texture
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.generateMipmaps = false;
       
-      // Draw text centered
-      ctx.fillText(p.text, canvas.width / 2, canvas.height / 2);
-    }
+      setTextTex(texture);
+    };
     
-    // Create texture
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.generateMipmaps = false;
-    
-    setTextTex(texture);
+    createTexture();
     
     return () => {
-      texture.dispose();
+      // Cleanup will be handled by the component unmount
     };
-  }, [p.text, p.textElements]);
+  }, [p.text, p.textElements, p.iconElements]);
 
   // ping-pong targets
   const rta = useRef<THREE.WebGLRenderTarget>();
@@ -344,14 +404,22 @@ export default function RippleReveal(p: Props) {
     if (compU.current) compU.current.uResolution.value.set(w, h);
   }, [size.width, size.height, DPR, p.brushRadiusPxAt1440]);
 
+  // Frame skipping for performance
+  const frameCounter = useRef(0);
+  const skipFrames = p.lowPowerMode ? 1 : 0; // Skip every other frame on low-power devices
+
   useFrame((state, dt) => {
     if (!rta.current || !rtb.current) return;
+    
+    // Frame skipping for low-power devices
+    frameCounter.current++;
+    if (frameCounter.current % (skipFrames + 1) !== 0) return;
     
     try {
 
     // PASS A — decay + brush into rta
     brushU.current.uPrev.value = rtb.current.texture;
-    brushU.current.uDelta.value = Math.min(dt, 0.05);
+    brushU.current.uDelta.value = Math.min(dt * (skipFrames + 1), 0.05); // Adjust delta for skipped frames
     
     // Calculate smooth brush position
     const bx = THREE.MathUtils.lerp(prev.current.x, pointer.current.x, 0.3);

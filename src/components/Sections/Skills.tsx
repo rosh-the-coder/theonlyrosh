@@ -151,17 +151,17 @@ export default function Skills() {
               </div>
 
               {/* Skills List */}
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {category.skills.map((skill, skillIndex) => (
                   <motion.div
                     key={skill.name}
-                    className="group"
+                    className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 min-h-[140px] flex flex-col justify-between hover:bg-white/10 hover:border-accent/30 transition-all duration-300"
                     initial={{ opacity: 0, x: -30 }}
                     animate={isInView ? { opacity: 1, x: 0 } : {}}
                     transition={{ delay: 0.8 + categoryIndex * 0.2 + skillIndex * 0.1, duration: 0.6 }}
                     whileHover={{ scale: 1.02 }}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-semibold text-white group-hover:text-accent transition-colors duration-300">
                         {skill.name}
                       </h4>
@@ -169,7 +169,7 @@ export default function Skills() {
                     </div>
                     
                     {/* Skill Bar */}
-                    <div className="relative h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+                    <div className="relative h-4 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm mb-4">
                       <motion.div
                         className={`h-full bg-gradient-to-r ${getSkillColor(skill.level)} rounded-full relative overflow-hidden`}
                         initial={{ width: 0 }}
@@ -193,7 +193,7 @@ export default function Skills() {
                     </div>
                     
                     {/* Skill Description */}
-                    <p className="text-gray-400 text-sm mt-2 leading-relaxed">
+                    <p className="text-gray-400 text-sm leading-relaxed">
                       {skill.description}
                     </p>
                   </motion.div>
@@ -227,14 +227,14 @@ export default function Skills() {
             ].map((tool, index) => (
               <motion.div
                 key={tool.name}
-                className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300"
+                className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-8 min-h-[160px] flex flex-col items-center justify-center hover:bg-white/10 transition-all duration-300"
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 1.6 + index * 0.1, duration: 0.6 }}
                 whileHover={{ scale: 1.05, y: -5 }}
               >
-                <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/30 transition-colors duration-300">
-                  <tool.icon className="w-6 h-6 text-accent" />
+                <div className="w-14 h-14 bg-accent/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/30 transition-colors duration-300">
+                  <tool.icon className="w-7 h-7 text-accent" />
                 </div>
                 <h4 className="text-white font-semibold mb-2 group-hover:text-accent transition-colors duration-300">
                   {tool.name}

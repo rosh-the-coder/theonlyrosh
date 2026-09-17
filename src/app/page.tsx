@@ -1,30 +1,38 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero/Hero";
 import Navigation from "@/components/Navigation/Navigation";
 import FloatingBottomNav from "@/components/Navigation/FloatingBottomNav";
-import About from "@/components/Sections/About";
 import Showreel from "@/components/Sections/Showreel";
-import Intro_Spooky_Pookie from "@/components/Sections/Intro_Spooky-Pookie";
-import SPWebgl from "@/components/Sections/SP-webgl";
-import Work from "@/components/Sections/Work";
-import Skills from "@/components/Sections/Skills";
-import Experience from "@/components/Sections/Experience";
-import Contact from "@/components/Sections/Contact";
 import CustomCursor from "@/components/UI/CustomCursor";
 import MusicPlayer from "@/components/UI/MusicPlayer";
+import { useSmoothScrollBetter } from "@/hooks/useSmoothScrollBetter";
+
+// Lazy load heavy components that aren't immediately visible
+const About = lazy(() => import("@/components/Sections/About"));
+const Work = lazy(() => import("@/components/Sections/Work"));
+const Services = lazy(() => import("@/components/Sections/Services"));
+const TechStack = lazy(() => import("@/components/Sections/TechStack"));
+const InfoFooter = lazy(() => import("@/components/Sections/InfoFooter"));
+const SpookiePookieEntry = lazy(() => import("@/components/SpookiePookieEntry"));
 
 export default function Page() {
   const [isLoading, setIsLoading] = useState(true) // Start with true
   const [isInitialized, setIsInitialized] = useState(false)
   const hasDecided = useRef(false) // Prevent double execution in Strict Mode
 
+  // Enable smooth scrolling with breathing effect
+  useSmoothScrollBetter()
+
   useEffect(() => {
     // Prevent double execution in React Strict Mode
     if (hasDecided.current) return
     hasDecided.current = true
+    
+    // Always scroll to top on page load/reload to prevent layout issues
+    window.scrollTo(0, 0)
     
     // Check if this is a navigation back from another page (not a refresh)
     const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
@@ -46,6 +54,30 @@ export default function Page() {
 
   const handleLoadingComplete = () => {
     setIsLoading(false)
+    
+    // Check for scroll intent from sessionStorage
+    const scrollToWork = sessionStorage.getItem('scrollToWork')
+    console.log('Loading complete, scrollToWork:', scrollToWork)
+    
+    if (scrollToWork === 'true') {
+      // Clear the flag
+      sessionStorage.removeItem('scrollToWork')
+      
+      // Small delay to ensure all components are rendered
+      setTimeout(() => {
+        const workSection = document.querySelector('#work')
+        console.log('Work section found:', !!workSection)
+        if (workSection) {
+          const workRect = workSection.getBoundingClientRect()
+          const workTop = workRect.top + window.pageYOffset
+          
+          // Scroll to 50px after Work section starts
+          const scrollTarget = workTop + 50
+          console.log('Work section top:', workTop, 'Scroll target:', scrollTarget)
+          window.scrollTo({ top: scrollTarget, behavior: 'smooth' })
+        }
+      }, 1500) // Increased delay to ensure everything is loaded
+    }
   }
 
   // Don't render anything until we've checked session storage
@@ -64,16 +96,27 @@ export default function Page() {
         style={{ position: 'relative' }}
         suppressHydrationWarning
       >
-        <Hero />
-        <Navigation />
-        <Showreel />
-        <Intro_Spooky_Pookie />
-        <SPWebgl />
-        <About />
-        <Work />
-        <Skills />
-        <Experience />
-        <Contact />
+             <Hero />
+             <Navigation />
+             <Showreel />
+             <Suspense fallback={<div className="h-screen bg-black" />}>
+               <SpookiePookieEntry />
+             </Suspense>
+             <Suspense fallback={<div className="h-screen bg-black" />}>
+               <About />
+             </Suspense>
+             <Suspense fallback={<div className="h-screen bg-black" />}>
+               <Work />
+             </Suspense>
+             <Suspense fallback={<div className="h-screen bg-black" />}>
+               <Services />
+             </Suspense>
+             <Suspense fallback={<div className="h-screen bg-black" />}>
+               <TechStack />
+             </Suspense>
+             <Suspense fallback={<div className="h-screen bg-black" />}>
+               <InfoFooter />
+             </Suspense>
         <FloatingBottomNav />
         <CustomCursor />
         <MusicPlayer />

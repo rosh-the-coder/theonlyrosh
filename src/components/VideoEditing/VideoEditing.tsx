@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Draggable } from 'gsap/Draggable';
@@ -25,23 +26,124 @@ declare global {
   }
 }
 
-// Video editing project covers - replace with your actual video thumbnails
+// Video editing project covers - Videos hosted on Cloudflare R2 CDN
+const R2_CDN = "https://pub-14e70177217f4d5481f61d1335a55a75.r2.dev";
 const VIDEO_COVERS = [
-  "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1594736797933-d0f37c4b47c3?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1594736797933-d0f37c4b47c3?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=400&fit=crop&crop=center",
-  "https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=400&fit=crop&crop=center",
+  { src: encodeURI("/video editing/video covers/1. Film Grains.png"), name: "Film Grains", video: `${R2_CDN}/1.%20Film%20Grains.mp4` },
+  { src: encodeURI("/video editing/video covers/2. Wake Up.png"), name: "Wake Up", video: `${R2_CDN}/2.%20Wake%20Up.mp4` },
+  { src: encodeURI("/video editing/video covers/3. Flashback.png"), name: "Flashback", video: `${R2_CDN}/3.%20Flashback.mp4` },
+  { src: encodeURI("/video editing/video covers/4. Vesper.png"), name: "Vesper", video: `${R2_CDN}/4.%20Vesper.mp4` },
+  { src: encodeURI("/video editing/video covers/5. Chanel.png"), name: "Chanel", video: `${R2_CDN}/5.%20Chanel.mp4` },
+  { src: encodeURI("/video editing/video covers/6. Mayhem.png"), name: "Mayhem", video: `${R2_CDN}/6.%20Mayhem.mp4` },
+  { src: encodeURI("/video editing/video covers/7. Spacing Out.png"), name: "Spacing Out", video: `${R2_CDN}/7.%20Spacing%20Out.mp4` },
+  { src: encodeURI("/video editing/video covers/8. Waves.png"), name: "Waves", video: `${R2_CDN}/8.%20Waves.mp4` },
+  { src: encodeURI("/video editing/video covers/9. Skateboard P.PNG"), name: "Skateboard P", video: `${R2_CDN}/9.%20Skateboard%20P.mp4` },
+  { src: encodeURI("/video editing/video covers/10. Self Control.png"), name: "Self Control", video: `${R2_CDN}/10.%20Self%20Control.MOV` },
+  { src: encodeURI("/video editing/video covers/11. Vroom.png"), name: "Vroom", video: `${R2_CDN}/11.%20Vroom.mp4` },
+  { src: encodeURI("/video editing/video covers/12. Sonic Boom.png"), name: "Sonic Boom", video: `${R2_CDN}/12.%20Sonic%20Boom.m4v` },
 ];
 
 export default function VideoEditing() {
   const boxesRef = useRef<HTMLDivElement>(null);
   const dragProxyRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  
+  // Video player state
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState<{src: string, name: string, video: string} | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [imagesRevealed, setImagesRevealed] = useState(false);
+
+  // Video player functions
+  const openVideo = (video: {src: string, name: string, video: string}) => {
+    console.log('Opening video:', video.name, video.video);
+    setCurrentVideo(video);
+    setIsVideoOpen(true);
+    setIsPlaying(true); // Set to true immediately
+    setCurrentTime(0);
+    setVolume(1);
+    setDuration(0);
+    
+    // Hide bottom nav when video opens
+    const event = new CustomEvent('work-section-visibility', {
+      detail: { isVisible: true }
+    });
+    window.dispatchEvent(event);
+  };
+
+  const closeVideo = () => {
+    setIsVideoOpen(false);
+    setCurrentVideo(null);
+    setIsPlaying(false);
+    
+    // Show bottom nav when video closes
+    const event = new CustomEvent('work-section-visibility', {
+      detail: { isVisible: false }
+    });
+    window.dispatchEvent(event);
+  };
+
+  const togglePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play().catch(err => console.error('Toggle play error:', err));
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (videoRef.current && progressRef.current) {
+      const rect = progressRef.current.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const width = rect.width;
+      const newTime = (clickX / width) * duration;
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Auto-play video when it opens
+  useEffect(() => {
+    if (isVideoOpen && videoRef.current && isPlaying) {
+      videoRef.current.muted = false; // Unmute the video
+      videoRef.current.volume = volume; // Set the volume
+      videoRef.current.play().catch(console.error);
+    }
+  }, [isVideoOpen, isPlaying, volume]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -142,6 +244,10 @@ export default function VideoEditing() {
       // Set up linear carousel after smooth transition
       setTimeout(() => {
         setupLinearCarousel();
+        // Reveal images after animations complete
+        setTimeout(() => {
+          setImagesRevealed(true);
+        }, 500);
       }, 1300); // Wait for the full transition sequence
     }, [], 2.8);
 
@@ -343,21 +449,11 @@ export default function VideoEditing() {
       
       const target = e.target as HTMLElement;
       const BOX = target.closest('.video-box');
-      if (BOX && window.linearCarousel) {
-        let TARGET = boxes.indexOf(BOX);
-        let CURRENT = gsap.utils.wrap(
-          0,
-          boxes.length,
-          Math.floor(boxes.length * (Number(window.linearCarousel.SCRUB.vars.position) || 0))
-        );
-        let BUMP = TARGET - CURRENT;
-        if (TARGET > CURRENT && TARGET - CURRENT > boxes.length * 0.5) {
-          BUMP = (boxes.length - BUMP) * -1;
+      if (BOX) {
+        const index = boxes.indexOf(BOX);
+        if (index !== -1 && VIDEO_COVERS[index]) {
+          openVideo(VIDEO_COVERS[index]);
         }
-        if (CURRENT > TARGET && CURRENT - TARGET > boxes.length * 0.5) {
-          BUMP = boxes.length + BUMP;
-        }
-        window.linearCarousel.scrollToPosition((Number(window.linearCarousel.SCRUB.vars.position) || 0) + BUMP * (1 / boxes.length));
       }
     };
 
@@ -417,25 +513,37 @@ export default function VideoEditing() {
           touchAction: 'none'
         }}
       >
-        {VIDEO_COVERS.map((cover, index) => (
+        {VIDEO_COVERS.map((video, index) => (
           <div
             key={index}
-            className="video-box h-80 w-80 min-h-[200px] min-w-[200px] rounded-xl cursor-pointer transition-transform duration-300 hover:scale-105"
+            className="video-box h-80 w-80 min-h-[200px] min-w-[200px] rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 group relative overflow-hidden hover:border-2 hover:border-white hover:shadow-[inset_0_0_20px_rgba(255,255,255,0.3)]"
             style={{
-              backgroundImage: `url(${cover})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundColor: index % 2 === 0 ? 'hsl(90, 80%, 70%)' : 'hsl(90, 80%, 40%)',
+              backgroundColor: '#000000',
               borderRadius: '12px'
             }}
           >
-            <span className="sr-only">{index + 1}</span>
-            <img 
-              src={cover} 
-              alt={`Video project ${index + 1}`}
-              className="absolute h-full w-full top-0 left-0 object-cover rounded-xl"
+            <Image 
+              src={video.src} 
+              alt={video.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              quality={85}
+              priority={false}
+              className={`object-cover rounded-xl transition-all duration-500 group-hover:blur-sm ${
+                imagesRevealed ? 'opacity-100' : 'opacity-0'
+              }`}
               style={{ borderRadius: '12px' }}
             />
+            
+            {/* Video name overlay - appears on hover */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+              <h3 className="text-white text-lg md:text-xl lg:text-2xl font-teko font-normal text-center px-2 md:px-4">
+                {video.name}
+              </h3>
+            </div>
+            
+            {/* Dark overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 rounded-xl"></div>
           </div>
         ))}
       </div>
@@ -449,14 +557,122 @@ export default function VideoEditing() {
       />
 
       {/* Video Editing Title */}
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
-        <h1 className="text-6xl font-bold text-white font-teko tracking-wider">
+      <div className="absolute top-12 md:top-20 left-1/2 transform -translate-x-1/2 z-10 px-4 md:px-0 max-w-[90vw] md:max-w-none">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white font-teko tracking-wider text-center">
           VIDEO EDITING
         </h1>
-        <p className="text-xl text-gray-300 text-center mt-4 font-light">
-          Creative Motion & Visual Storytelling
+         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 text-center mt-2 md:mt-0 font-teko px-2 md:px-0 leading-tight">
+          Creative Motion & Visual Storytelling. I love to travel, and document my experiences in unique and narrative formats to reflect my personality in my videos.
         </p>
       </div>
+
+      {/* See My Work Button */}
+      <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-[9999] pointer-events-auto">
+        <button
+          onClick={() => window.open('https://roshanedits.myportfolio.com/two-blokes-trading', '_blank')}
+          className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-2 md:px-6 md:py-3 text-white font-teko font-normal text-base md:text-lg hover:bg-white/20 hover:backdrop-blur-lg transition-all duration-300 hover:scale-105"
+        >
+          See my work
+        </button>
+      </div>
+
+       {/* Video Player Modal */}
+       {isVideoOpen && currentVideo && (
+         <div 
+           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+           onClick={closeVideo}
+         >
+           <div 
+             className="relative w-full max-w-md mx-4"
+             onClick={(e) => e.stopPropagation()}
+           >
+            {/* Close Button */}
+            <button
+              onClick={closeVideo}
+              className="absolute -top-12 right-0 text-white text-2xl hover:text-gray-300 transition-colors"
+            >
+              ✕
+            </button>
+            
+            {/* Video Container */}
+            <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '9/16' }}>
+              {currentVideo && (
+                <video
+                  ref={videoRef}
+                  key={currentVideo.video}
+                  src={currentVideo.video}
+                  className="w-full h-full object-cover"
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onEnded={() => setIsPlaying(false)}
+                  playsInline
+                  autoPlay
+                  loop
+                />
+              )}
+              
+              {/* Video Controls Overlay */}
+              <div className="absolute inset-0 flex flex-col justify-between p-3 md:p-4 bg-gradient-to-t from-black/60 via-transparent to-black/60">
+                {/* Top - Video Title */}
+                <div className="text-center">
+                  <h3 className="text-white text-lg md:text-xl font-teko font-normal">
+                    {currentVideo.name}
+                  </h3>
+                </div>
+                
+                {/* Bottom - Controls */}
+                <div className="space-y-2 md:space-y-3">
+                  {/* Progress Bar */}
+                  <div
+                    ref={progressRef}
+                    onClick={handleProgressClick}
+                    className="w-full h-2 bg-white/30 rounded-full cursor-pointer"
+                  >
+                    <div
+                      className="h-full bg-white rounded-full transition-all duration-100"
+                      style={{ width: `${(currentTime / duration) * 100}%` }}
+                    />
+                  </div>
+                  
+                  {/* Time Display */}
+                  <div className="flex justify-between text-white text-xs md:text-sm">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
+                  
+                  {/* Control Buttons */}
+                  <div className="flex items-center justify-between">
+                    {/* Play/Pause Button */}
+                    <button
+                      onClick={togglePlayPause}
+                      className="text-white hover:text-gray-300 transition-colors text-3xl md:text-4xl"
+                    >
+                      {isPlaying ? '⏸️' : '▶️'}
+                    </button>
+                    
+                    {/* Volume Control */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-white text-xs md:text-sm">🔊</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-16 md:w-20 h-1 bg-white/30 rounded-full appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, white 0%, white ${volume * 100}%, rgba(255,255,255,0.3) ${volume * 100}%, rgba(255,255,255,0.3) 100%)`
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

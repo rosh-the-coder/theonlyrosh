@@ -8,7 +8,12 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
-export default function SpectralGhostSection() {
+interface SpectralGhostSectionProps {
+  children?: React.ReactNode;
+  showControls?: boolean;
+}
+
+export default function SpectralGhostSection({ children, showControls = true }: SpectralGhostSectionProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const preloaderRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -16,7 +21,7 @@ export default function SpectralGhostSection() {
   const paneHostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    if (!mountRef.current || !showControls) return;
 
     // -------- Preloader helpers --------
     const preloaderEl = preloaderRef.current!;
@@ -68,12 +73,12 @@ export default function SpectralGhostSection() {
         tDiffuse: { value: null },
         uTime: { value: 0.0 },
         uResolution: { value: new THREE.Vector2(w, h) },
-        uAnalogGrain: { value: 0.4 },
-        uAnalogBleeding: { value: 1.0 },
-        uAnalogVSync: { value: 1.0 },
-        uAnalogScanlines: { value: 1.0 },
-        uAnalogVignette: { value: 1.0 },
-        uAnalogJitter: { value: 0.4 },
+        uAnalogGrain: { value: 0.1 },
+        uAnalogBleeding: { value: 0.3 },
+        uAnalogVSync: { value: 0.5 },
+        uAnalogScanlines: { value: 0.3 },
+        uAnalogVignette: { value: 0.5 },
+        uAnalogJitter: { value: 0.1 },
         uAnalogIntensity: { value: 0.6 },
         uLimboMode: { value: 0.0 },
       },
@@ -135,7 +140,7 @@ export default function SpectralGhostSection() {
     // -------- Reveal veil (stronger + guaranteed fullscreen) --------
     // Keep it HUGE and always facing camera so it fills view.
   const params = {
-      revealRadius: 70,       // bigger spotlight
+      revealRadius: 30,       // default radius
       fadeStrength: 2.0,
       baseOpacity: 0.65,      // <— darker outside area so reveal is obvious
       revealOpacity: 0.02,    // <— near ghost is almost clear
@@ -358,7 +363,53 @@ export default function SpectralGhostSection() {
         pane.element.style.position = "absolute";
         pane.element.style.top = "20px";
         pane.element.style.right = "20px";
-        pane.element.style.zIndex = "40";
+        pane.element.style.zIndex = "1002";
+        pane.element.style.pointerEvents = "auto";
+        
+        // Make it draggable only by the title bar
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startLeft = 0;
+        let startTop = 0;
+        
+        const handleMouseDown = (e: MouseEvent) => {
+          // Only allow dragging from the title bar area
+          const target = e.target as HTMLElement;
+          const isTitleBar = target.classList.contains('tp-dfwv-title') || 
+                           target.closest('.tp-dfwv-title') ||
+                           target.classList.contains('tp-dfwv-titlebar') ||
+                           target.closest('.tp-dfwv-titlebar');
+          
+          if (!isTitleBar) return;
+          
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          startLeft = parseInt(pane.element.style.left || "0");
+          startTop = parseInt(pane.element.style.top || "0");
+          pane.element.style.cursor = "grabbing";
+          e.preventDefault();
+          e.stopPropagation();
+        };
+        
+        const handleMouseMove = (e: MouseEvent) => {
+          if (!isDragging) return;
+          const deltaX = e.clientX - startX;
+          const deltaY = e.clientY - startY;
+          pane.element.style.left = (startLeft + deltaX) + "px";
+          pane.element.style.top = (startTop + deltaY) + "px";
+          pane.element.style.right = "auto";
+        };
+        
+        const handleMouseUp = () => {
+          isDragging = false;
+          pane.element.style.cursor = "move";
+        };
+        
+        pane.element.addEventListener("mousedown", handleMouseDown);
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
 
         const reveal = (pane as any).addFolder({ title: "Background Reveal", expanded: true });
         reveal.addBinding(params, "revealRadius", { label: "Radius", min: 10, max: 140, step: 2 })
@@ -397,10 +448,10 @@ export default function SpectralGhostSection() {
         if (Array.isArray(m)) m.forEach((mm:any)=>mm.dispose?.()); else m?.dispose?.();
       });
     };
-  }, []);
+  }, [showControls]);
 
   return (
-    <section className="sg-root">
+    <section className="sg-root" style={{ paddingTop: '500px', paddingBottom: '500px' }}>
       {/* Background layer so reveal is obvious */}
       <div
         className="sg-bg"
@@ -425,17 +476,19 @@ export default function SpectralGhostSection() {
 
       {/* Canvas mount + pane host */}
       <div ref={mountRef} className="sg-canvas-wrap" />
-      <div ref={paneHostRef} className="sg-pane-host" />
+      {showControls && <div ref={paneHostRef} className="sg-pane-host" />}
 
       {/* Optional overlay content */}
       <div ref={contentRef} className="sg-content">
-        <div className="sg-quote-wrap">
-          <h1 className="sg-quote">
-            Veil of Dust<br/>Trail of Ash<br/>Heart of Ice
-          </h1>
-          <span className="sg-author">Whispers through memory</span>
-        </div>
-      </div>
+  <div className="sg-quote-wrap">
+    <h1 className="sg-quote">
+      Roshan Najar is an Architect turned Design Engineer who likes building games and vibe code for fun. He likes getting his hands dirty (technically) and break barriers in Design.
+    </h1>
+  </div>
+</div>
+
+      {/* Children overlay */}
+      {children}
 
       <style jsx global>{`
         .sg-root { position: relative; width: 100%; height: 100svh; overflow: hidden; background:#111; }
@@ -443,10 +496,10 @@ export default function SpectralGhostSection() {
         .sg-canvas-wrap { position:absolute; inset:0; z-index:2; }
         .sg-canvas { position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease-in; }
         .sg-canvas.sg-canvas-in { opacity:1; }
-        .sg-content { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:20px; text-align:center; color:#e0e0e0; opacity:0; transition:opacity 1.2s ease-in; pointer-events:none; }
-        .sg-content.sg-fade-in{ opacity:1; }
-        .sg-quote-wrap{ max-width:90%; }
-        .sg-quote{ font-family: ui-sans-serif, system-ui; font-weight:600; text-transform:uppercase; letter-spacing:.02em; font-size:clamp(28px,6vw,84px); line-height:1.2; margin-bottom:5vh; }
+        .sg-content { position:absolute; inset:0; z-index:1; display:grid; place-items:center; padding:20px; text-align:center; color:#e0e0e0; opacity:1; pointer-events:auto; }
+        .sg-content.sg-fade-in{ /* optional now; keep if you want */ }
+        .sg-quote-wrap{ max-width:1206px; width:100%; padding:0 20px; }
+        .sg-quote{ font-family: 'Teko', ui-sans-serif, system-ui; font-weight:600; text-transform:uppercase; letter-spacing:.02em; font-size:57.6px; line-height:1.0; margin-bottom:5vh; }
         .sg-author{ font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; text-transform:uppercase; opacity:.7; }
         .sg-preloader{ position:fixed; inset:0; background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 50%,#0a0a0a 100%); display:grid; place-items:center; z-index:5; opacity:1; transition:opacity .9s ease-out; }
         .sg-preloader.sg-fade-out{ opacity:0; pointer-events:none; }
@@ -460,8 +513,41 @@ export default function SpectralGhostSection() {
         @keyframes sg-text{ 0%,100%{opacity:1} 50%{opacity:.1} }
         .sg-loading-progress{ width:96px; height:1px; margin:0 auto; border-radius:1px; overflow:hidden; }
         .sg-progress-bar{ height:100%; background:linear-gradient(90deg,#00ff80,#00cc66); opacity:.25; width:0%; transition:width .8s ease; }
-        .sg-pane-host{ position:absolute; inset:0; pointer-events:none; z-index:4; }
-        .sg-pane-host .tp-dfwv{ pointer-events:auto; } /* allow clicking pane */
+        .sg-pane-host{ 
+          position:absolute; 
+          inset:0; 
+          pointer-events:none; 
+          z-index:1000; 
+          margin-top:550px; 
+        }
+        .sg-pane-host .tp-dfwv{ 
+          pointer-events:auto !important; 
+          z-index:1001 !important; 
+          position:relative !important;
+          background: rgba(255, 255, 255, 0.1) !important;
+          backdrop-filter: blur(20px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+          border-radius: 16px !important;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+          padding: 20px !important;
+          margin-right: 40px !important;
+          cursor: move !important;
+          user-select: none !important;
+        }
+        .sg-pane-host * { pointer-events:auto !important; }
+        .sg-pane-host .tp-dfwv * { 
+          background: transparent !important;
+          color: rgba(255, 255, 255, 0.9) !important;
+        }
+        /* Hide controls on mobile */
+        @media (max-width: 768px) {
+          .sg-pane-host {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
+        }
       `}</style>
     </section>
   );

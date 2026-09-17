@@ -1,339 +1,344 @@
-'use client'
-
-import { useRef, useEffect, useState } from 'react'
-import { motion, useScroll, useTransform, useInView } from 'framer-motion'
-import { ArrowRight, ExternalLink, Github, Play, Eye } from 'lucide-react'
+"use client";
+import { useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export default function Work() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll()
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" })
-  
-  const [activeProject, setActiveProject] = useState(0)
-  const [isHovering, setIsHovering] = useState<number | null>(null)
+  const [activePanel, setActivePanel] = useState(0);
+  const [isInView, setIsInView] = useState(false);
+  const [hoveredPanel, setHoveredPanel] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
-  const y = useTransform(scrollYProgress, [0, 1], [0, -200])
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [1, 1, 0.5, 0])
-
-  const projects = [
+  const workItems = [
     {
       id: 1,
-      title: "TaxiOutFixt",
-      category: "UX Design • UX Research • Wireframing • Prototype",
-      description: "A comprehensive taxi booking and management platform designed with user experience at its core. Features intuitive wireframes and interactive prototypes.",
-      image: "/images/projects/taxioutfixt.jpg",
-      tags: ["UX Design", "UX Research", "Wireframing", "Prototype"],
-      link: "#",
-      github: "#",
-      demo: "#"
+      title: "REDVELVETVAULT",
+      subtitle: "GAMIFIED PRODUCT",
+      year: "2024-Current",
+      image: "/Work/RVV/rvv-cover.png",
+      tickerText: "UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY • UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY"
     },
     {
       id: 2,
-      title: "BirdWatch AR",
-      category: "Augmented Reality • Mobile App • Wildlife",
-      description: "An innovative AR application that helps users identify and learn about birds in their environment through augmented reality technology.",
-      image: "/images/projects/birdwatch-ar.jpg",
-      tags: ["AR", "Mobile App", "Unity", "C#"],
-      link: "#",
-      github: "#",
-      demo: "#"
+      title: "POWERSTRIDE",
+      subtitle: "SUSTAINABLE APP",
+      year: "2024",
+      image: "/Work/PowerStride/Power-stride-Cover.png",
+      tickerText: "UX RESEARCH • UI REDESIGN • SUSTAINABLE DESIGN • QUANTITATIVE RESEARCH • SCIENCE & INNOVATION • ENERGY AWARENESS • SMART MOBILITY • TRANSIT INNOVATION • PIEZOELECTRIC TECHNOLOGY • ECO-INCENTIVES • MOBILE APP REDESIGN • UX RESEARCH • UI REDESIGN • SUSTAINABLE DESIGN • QUANTITATIVE RESEARCH • SCIENCE & INNOVATION • ENERGY AWARENESS • SMART MOBILITY • TRANSIT INNOVATION • PIEZOELECTRIC TECHNOLOGY • ECO-INCENTIVES • MOBILE APP REDESIGN"
     },
     {
       id: 3,
-      title: "Spookie Pookie",
-      category: "Game Design • Entertainment • Halloween",
-      description: "A spooky Halloween-themed game featuring engaging gameplay mechanics and immersive storytelling elements.",
-      image: "/images/projects/spookie-pookie.jpg",
-      tags: ["Game Design", "Unity", "C#", "Entertainment"],
-      link: "#",
-      github: "#",
-      demo: "#"
+      title: "THEFILMMAKERARCHITECT.COM",
+      subtitle: "CLIENT",
+      year: "2025",
+      image: "/Work/TFA/TFA-COVER.png",
+      tickerText: "FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING • FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING"
     },
     {
       id: 4,
-      title: "Shimmy Jimmy",
-      category: "Basketball • Game • Entertainment",
-      description: "A basketball-themed game with unique mechanics and engaging gameplay that keeps players entertained for hours.",
-      image: "/images/projects/shimmy-jimmy.jpg",
-      tags: ["Game Design", "Basketball", "Unity", "C#"],
-      link: "#",
-      github: "#",
-      demo: "#"
+      title: "COMING SOON",
+      subtitle: "UI/UX",
+      year: "2024",
+      image: "/Work/soon/pexels-alleksana-4271927.jpg",
+      tickerText: "VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS"
     },
     {
       id: 5,
-      title: "VR Shooter Game",
-      category: "VR • Entertainment • Immersive",
-      description: "An immersive virtual reality shooter game that pushes the boundaries of VR gaming technology.",
-      image: "/images/projects/vr-shooter.jpg",
-      tags: ["VR", "Game Design", "Unity", "C#"],
-      link: "#",
-      github: "#",
-      demo: "#"
+      title: "COMING SOON",
+      subtitle: "UI/UX",
+      year: "2024",
+      image: "/Work/soon/pexels-vie-studio-4439444.jpg",
+      tickerText: "VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS"
     }
-  ]
+  ];
 
+  const handlePanelClick = (index: number) => {
+    console.log('Panel clicked:', index);
+    setActivePanel(index);
+  };
+
+  // Simple click handler
+  const handleClick = (index: number) => {
+    console.log('CLICKED PANEL:', index);
+    setActivePanel(index);
+  };
+
+  // Handle card click - only navigate if expanded
+  const handleCardClick = (index: number) => {
+    if (activePanel === index) {
+      // Card is expanded, navigate to project page
+      window.location.href = `/project/${workItems[index].id}`;
+    } else {
+      // Card is collapsed, just expand it
+      setActivePanel(index);
+      // Auto-trigger hover state when expanding
+      setTimeout(() => {
+        setHoveredPanel(index);
+      }, 100); // Small delay to ensure smooth transition
+    }
+  };
+
+  // Intersection Observer to detect when Work section is in view
   useEffect(() => {
-    const handleScroll = () => {
-      if (scrollContainerRef.current) {
-        const scrollLeft = scrollContainerRef.current.scrollLeft
-        const containerWidth = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth
-        const progress = scrollLeft / containerWidth
-        const newActiveProject = Math.round(progress * (projects.length - 1))
-        setActiveProject(newActiveProject)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const isVisible = entry.isIntersecting && entry.intersectionRatio > 0.5;
+        setIsInView(isVisible);
+        
+        // Dispatch custom event for navigation bars
+        const event = new CustomEvent('work-section-visibility', {
+          detail: { isVisible }
+        });
+        window.dispatchEvent(event);
+      },
+      { threshold: [0, 0.5, 1] }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
       }
-    }
+    };
+  }, []);
 
-    const scrollContainer = scrollContainerRef.current
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll)
-      return () => scrollContainer.removeEventListener('scroll', handleScroll)
-    }
-  }, [projects.length])
+  // Pin Work section near end to keep it fixed while Services enters - DESKTOP ONLY
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Skip pinning on mobile
+    if (window.innerWidth <= 768) return;
+    
+    gsap.registerPlugin(ScrollTrigger);
 
-  const scrollToProject = (index: number) => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current
-      const projectWidth = container.scrollWidth / projects.length
-      container.scrollTo({
-        left: projectWidth * index,
-        behavior: 'smooth'
-      })
-    }
-  }
+    if (!sectionRef.current) return;
+
+    const pinTrigger = ScrollTrigger.create({
+      trigger: sectionRef.current,
+      start: 'top -15%',
+      end: '+=1500',
+      pin: sectionRef.current,
+      pinSpacing: true,
+      id: 'work-pin'
+    });
+
+    return () => {
+      pinTrigger.kill();
+    };
+  }, []);
 
   return (
-    <motion.section
-      id="work"
-      ref={containerRef}
-      className="relative min-h-screen bg-black py-20 overflow-hidden"
-      style={{ y, opacity, zIndex: 2 }}
-    >
-      {/* Background Elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Section Header */}
-        <motion.div
-          className="text-center mb-20"
-          initial={{ opacity: 0, y: 50 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.h2
-            className="text-5xl md:text-7xl font-bold mb-6"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.2, duration: 0.8 }}
-          >
-            My <span className="gradient-text">Work</span>
-          </motion.h2>
-          
-          <motion.p
-            className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.4, duration: 0.8 }}
-          >
-            Some crazy sh*t that showcases my multidisciplinary approach to design and development.
-          </motion.p>
-        </motion.div>
-
-        {/* Project Navigation Dots */}
-        <motion.div
-          className="flex justify-center gap-3 mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.6, duration: 0.8 }}
-        >
-          {projects.map((_, index) => (
-            <motion.button
-              key={index}
-              onClick={() => scrollToProject(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                activeProject === index ? 'bg-accent scale-125' : 'bg-white/30 hover:bg-white/50'
-              }`}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.9 }}
-            />
-          ))}
-        </motion.div>
-
-        {/* Horizontal Scroll Container */}
-        <div className="relative">
-          <motion.div
-            ref={scrollContainerRef}
-            className="flex gap-8 overflow-x-auto scrollbar-hide pb-8"
-            style={{ scrollSnapType: 'x mandatory' }}
-            initial={{ opacity: 0, x: 100 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ delay: 0.8, duration: 1 }}
-          >
-            {projects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                className="flex-shrink-0 w-full max-w-2xl scroll-snap-start"
-                style={{ scrollSnapAlign: 'start' }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ delay: 1 + index * 0.2, duration: 0.8 }}
-                whileHover={{ scale: 1.02 }}
-                onHoverStart={() => setIsHovering(index)}
-                onHoverEnd={() => setIsHovering(null)}
-              >
-                <div className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden">
-                  {/* Project Image */}
-                  <div className="relative h-64 bg-gradient-to-br from-accent/20 to-blue-500/20 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-300" />
-                    
-                    {/* Placeholder for project image */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center text-white/60">
-                        <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Eye className="w-8 h-8" />
-                        </div>
-                        <p className="text-sm">Project Preview</p>
-                      </div>
-                    </div>
-
-                    {/* Hover Overlay */}
-                    <motion.div
-                      className="absolute inset-0 bg-accent/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                    >
-                      <div className="flex gap-4">
-                        <motion.button
-                          className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Play className="w-5 h-5" />
-                        </motion.button>
-                        <motion.button
-                          className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <ExternalLink className="w-5 h-5" />
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  {/* Project Content */}
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-accent transition-colors duration-300">
-                        {project.title}
-                      </h3>
-                      <p className="text-sm text-accent font-medium mb-3">
-                        {project.category}
-                      </p>
-                      <p className="text-gray-300 leading-relaxed">
-                        {project.description}
-                      </p>
-                    </div>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {project.tags.map((tag, tagIndex) => (
-                        <span
-                          key={tagIndex}
-                          className="px-3 py-1 bg-white/10 text-white/80 text-xs rounded-full border border-white/20"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3">
-                      <motion.button
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-accent text-black font-semibold rounded-lg hover:bg-accent/90 transition-colors"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Play className="w-4 h-4" />
-                        Live Demo
-                      </motion.button>
-                      <motion.button
-                        className="px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors border border-white/20"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Github className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  {/* Glow Effect */}
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-accent/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ filter: 'blur(20px)' }}
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Scroll Indicators */}
-          <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white/60 border border-white/20">
-            <ArrowRight className="w-5 h-5 rotate-180" />
-          </div>
-          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white/60 border border-white/20">
-            <ArrowRight className="w-5 h-5" />
+    <section id="work" ref={sectionRef} className="relative min-h-[250vh] md:min-h-screen bg-[#0B0B0B] py-10 md:py-20" style={{ zIndex: 20 }}>
+      <div className="w-full px-4 md:px-10">
+        {/* Section Title and Year */}
+        <div className="w-full mb-8 md:mb-12">
+          <div className="flex justify-between items-center">
+            <div className="text-[80px] sm:text-[120px] md:text-[160px] lg:text-[200px] font-teko font-normal text-white">WORK</div>
+            <div className="text-[80px] sm:text-[120px] md:text-[160px] lg:text-[200px] font-teko font-normal text-white">'25</div>
           </div>
         </div>
 
-        {/* View All Projects Button */}
-        <motion.div
-          className="text-center mt-16"
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 1.6, duration: 0.8 }}
-        >
-          <motion.button
-            className="group px-8 py-4 border-2 border-accent text-accent font-bold rounded-full hover:bg-accent hover:text-black transition-all duration-300"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="flex items-center gap-3">
-              View All Projects
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </span>
-          </motion.button>
-        </motion.div>
+        {/* Expanding Cards Container */}
+        <div ref={containerRef} className="flex flex-col md:flex-row w-full gap-3 md:gap-4 px-1 -mt-[60px] sm:-mt-[100px] md:-mt-[150px]" style={{ position: 'relative', zIndex: 2 }}>
+          {workItems.map((item, index) => {
+            // Hide cards 4 and 5 (index 3 and 4) on mobile
+            const isHiddenOnMobile = index >= 3;
+            
+            return (
+              <div
+                key={item.id}
+                className={`panel ${activePanel === index ? 'active' : ''} ${hoveredPanel === index ? 'hovered' : ''} ${isHiddenOnMobile ? 'hidden md:block' : ''}`}
+                style={{
+                  position: 'relative',
+                  zIndex: 3,
+                  cursor: activePanel === index ? 'pointer' : 'pointer'
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCardClick(index);
+                }}
+                onMouseEnter={() => {
+                  if (activePanel === index) {
+                    setHoveredPanel(index);
+                  }
+                }}
+                onMouseLeave={() => {
+                  setHoveredPanel(null);
+                }}
+              >
+              {/* Background image layer (isolates blur/scale from overlay content) */}
+              <div
+                className={`panel-bg absolute inset-0 rounded-[16px]`}
+                style={{
+                  backgroundImage: `url(${item.image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  zIndex: 0
+                }}
+              />
+
+              {/* Dim overlay on hover (below placeholder, above bg) */}
+              {hoveredPanel === index && activePanel === index && (
+                <div className="absolute inset-0 rounded-[16px] bg-black/30" style={{ zIndex: 1 }} />
+              )}
+              {/* Video player - only visible on hover when expanded */}
+              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ${
+                hoveredPanel === index && activePanel === index ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+              }`} style={{ zIndex: 2 }}>
+                <div className="w-[80%] aspect-video rounded-lg border border-white/30 shadow-[0_10px_25px_rgba(0,0,0,0.45)] overflow-hidden">
+                  {/* Only load video when hovered to save bandwidth and performance */}
+                  {hoveredPanel === index && activePanel === index && (
+                    <video
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                    >
+                      <source src={index === 0 ? "/Work/RVV/Showreel-Grid-Mobile.mp4" : index === 1 ? "/Work/PowerStride/Showreel_-Mobile-screens.mp4" : index === 2 ? "/Work/TFA/TFA.mp4" : ""} type="video/mp4" />
+                    </video>
+                  )}
+                </div>
+              </div>
+
+              {/* Expanded state - detailed layout */}
+              <div className={`absolute bottom-0 left-0 right-0 transition-opacity duration-500 ${
+                activePanel === index ? 'opacity-100' : 'opacity-0'
+              }`}>
+                <div className="card-footer bg-black/85 backdrop-blur-md rounded-b-[16px] p-4 md:p-6 min-h-[100px] md:min-h-[116px] border-t border-white/25">
+                  {/* Project info */}
+                  <div className="flex justify-between items-start mb-3 md:mb-4">
+                    <div>
+                      <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">{item.title}</h3>
+                      <div className="flex items-center space-x-2 md:space-x-4 text-white/80">
+                        <span className="text-sm md:text-lg">{item.subtitle}</span>
+                        <span className="text-lg md:text-2xl font-bold">{item.year}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ticker text */}
+                  <div className="overflow-hidden">
+                    <div className="ticker-text text-white/60 text-xs md:text-sm whitespace-nowrap">
+                      {item.tickerText}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+          })}
+        </div>
       </div>
 
-      {/* Floating Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-accent/40 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.2, 1, 0.2],
-              scale: [1, 2, 1],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: Math.random() * 3,
-            }}
-          />
-        ))}
-      </div>
-    </motion.section>
-  )
+      <style jsx>{`
+        .panel {
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          height: 40vh;
+          border-radius: 16px;
+          /* Start with no visible border/shadow; we'll animate these when active */
+          border: 3px solid rgba(255, 255, 255, 0);
+          box-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0), 0 0 0 rgba(0,0,0,0);
+          color: #fff;
+          cursor: pointer;
+          flex: 0.5;
+          margin: 5px;
+          position: relative;
+          overflow: hidden; /* Prevent background image from bleeding outside */
+          transition: flex 0.7s ease-in, border-color 0.4s ease, box-shadow 0.4s ease, height 0.5s ease;
+          -webkit-transition: flex 700ms ease-in, border-color 400ms ease, box-shadow 400ms ease, height 500ms ease;
+          display: block !important;
+          visibility: visible !important;
+        }
+
+        .panel.active {
+          flex: 2;
+          height: 50vh;
+          /* Animate in a prominent border & shadow in expanded state */
+          border-color: rgba(255, 255, 255, 0.28);
+          box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0,0,0,0.45);
+        }
+
+        .ticker-text {
+          animation: ticker 30s linear infinite;
+          will-change: transform;
+        }
+
+        /* Background layer transitions (keeps overlays crisp) */
+        .panel .panel-bg {
+          transition: transform 500ms ease, filter 500ms ease;
+          will-change: transform, filter;
+        }
+
+        .panel.hovered .panel-bg {
+          transform: scale(1.12);
+          filter: blur(2px);
+        }
+
+        @keyframes ticker {
+          0% {
+            transform: translateX(100%);
+          }
+          100% {
+            transform: translateX(-100%);
+          }
+        }
+
+        /* Mobile specific styles */
+        @media (max-width: 767px) {
+          .panel {
+            height: 50vh !important;
+            flex: none !important;
+            width: 100% !important;
+            margin: 8px 0 !important;
+            display: block !important;
+            visibility: visible !important;
+            position: relative !important;
+          }
+
+          /* Force hide cards 4 and 5 on mobile */
+          .panel.hidden {
+            display: none !important;
+          }
+
+          .panel.active {
+            height: 60vh !important;
+            flex: none !important;
+          }
+
+          .panel .panel-bg {
+            display: block !important;
+            opacity: 1 !important;
+          }
+
+          .card-footer {
+            display: block !important;
+            opacity: 1 !important;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .panel {
+            height: 80vh;
+            flex: 0.5;
+            margin: 10px;
+          }
+
+          .panel.active {
+            flex: 5;
+            height: 80vh;
+          }
+        }
+      `}</style>
+    </section>
+  );
 }

@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react'
 import { MotionConfig } from 'framer-motion'
+import { AudioProvider } from '@/contexts/AudioContext'
 
 interface ProvidersProps {
   children: ReactNode
@@ -15,15 +16,17 @@ export function Providers({ children }: ProvidersProps) {
   }, [])
 
   return (
-    <MotionConfig
-      transition={{
-        type: "spring",
-        mass: 0.5,
-        stiffness: 400,
-        damping: 50,
-      }}
-    >
-      {children}
-    </MotionConfig>
+    <AudioProvider>
+      <MotionConfig
+        transition={{
+          type: "spring",
+          mass: 0.5,
+          stiffness: 400,
+          damping: 50,
+        }}
+      >
+        {children}
+      </MotionConfig>
+    </AudioProvider>
   )
 }

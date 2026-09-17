@@ -2,250 +2,188 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform, useInView } from 'framer-motion'
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
-import { Download, ArrowRight, Sparkles, Code, Palette, Camera } from 'lucide-react'
+import SimpleWordWeave from '../Effects/SimpleWordWeave'
 
 export default function About() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const textRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLDivElement>(null)
+  const videoElementRef = useRef<HTMLVideoElement>(null)
   const [isClient, setIsClient] = useState(false)
-  const { scrollYProgress } = useScroll()
+  const [isMuted, setIsMuted] = useState(true)
+  
+  // Scroll progress for the entire section
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  })
+  
   const isInView = useInView(containerRef, { once: true, margin: "-100px" })
+  
+  // Intersection Observer to detect when About section is in view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const isVisible = entry.isIntersecting && entry.intersectionRatio > 0.5;
+        
+        // Dispatch custom event for navigation bars
+        const event = new CustomEvent('about-section-visibility', {
+          detail: { isVisible }
+        });
+        window.dispatchEvent(event);
+      },
+      { threshold: [0, 0.5, 1] }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
   
   useEffect(() => {
     setIsClient(true)
   }, [])
   
-  const y = useTransform(scrollYProgress, [0, 1], [0, -100])
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [1, 1, 0.5, 0])
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95])
-
-  const approachItems = [
-    {
-      number: "01",
-      title: "Discover & Analysis",
-      description: "Uncovering insights through research, play, and curiosity.",
-      icon: Sparkles,
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      number: "02", 
-      title: "Design & Implement",
-      description: "Turning ideas into interactive realities — one frame, and line of code at a time.",
-      icon: Code,
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      number: "03",
-      title: "Deliver & Monitor", 
-      description: "Testing, shipping, iterating — and making sure it actually works.",
-      icon: Palette,
-      color: "from-orange-500 to-red-500"
+  // Ensure video volume is set when component mounts
+  useEffect(() => {
+    if (videoElementRef.current) {
+      videoElementRef.current.volume = 1.0 // Set volume to maximum
     }
-  ]
-
-  const personalInfo = [
-    { label: "Location", value: "Dublin, Ireland" },
-    { label: "Experience", value: "5+ Years" },
-    { label: "Specialization", value: "UX/UI Design" },
-    { label: "Tools", value: "Figma, Unity, C#" }
-  ]
+  }, [isClient])
+  
+  // Toggle audio on click
+  const toggleAudio = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (videoElementRef.current) {
+      const video = videoElementRef.current
+      const newMutedState = !video.muted
+      
+      console.log('=== ABOUT VIDEO AUDIO TOGGLE ===')
+      console.log('Before toggle - Muted:', video.muted, 'Volume:', video.volume)
+      console.log('Video source:', video.src)
+      console.log('Video ready state:', video.readyState)
+      console.log('Video paused:', video.paused)
+      console.log('Video current time:', video.currentTime)
+      
+      video.muted = newMutedState
+      setIsMuted(newMutedState)
+      
+      // Ensure video is playing
+      video.play().catch(err => {
+        console.error('Video play error:', err)
+      })
+      
+      console.log('After toggle - Muted:', video.muted, 'Volume:', video.volume)
+      console.log('================================')
+    }
+  }
+  
+  // Video parallax effect
+  const videoY = useTransform(scrollYProgress, [0, 1], [0, -200]) // Parallax movement
+  const videoOpacity = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0, 1, 1, 0])
+  const videoScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 1.1]) // Scale effect
 
   return (
     <motion.section
       id="about"
       ref={containerRef}
-      className="relative min-h-screen bg-gradient-to-b from-black via-dark-gray to-black py-20 overflow-hidden"
-      style={isClient ? { y, opacity, scale, zIndex: 2 } : { zIndex: 2 }}
+      className="relative h-[1400px] bg-gray-100 overflow-hidden"
     >
-      {/* Background Elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-accent/5 to-blue-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Section Header */}
-        <motion.div
-          ref={textRef}
-          className="text-center mb-20"
-          initial={{ opacity: 0, y: 50 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.h2
-            className="text-5xl md:text-7xl font-bold mb-6"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.2, duration: 0.8 }}
-          >
-            <span className="gradient-text">About</span> Me
-          </motion.h2>
+      {/* Sticky Container */}
+      <div className="sticky top-0 h-screen flex items-center justify-center">
+        <div className="w-full max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-20 items-center pt-[570px]">
           
-          <motion.p
-            className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 30 }}
+          {/* Left Column - Text Content with Word Weave */}
+          <motion.div
+            className="space-y-8 self-start -mt-10"
+            initial={{ opacity: 0, y: 50 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.4, duration: 0.8 }}
+            transition={{ duration: 0.8 }}
           >
-            I'm a hybrid designer who breaks all discipline boundaries, based in Ireland. 
-            I design bold, intuitive experiences at the edge of UX, tech, and storytelling.
-          </motion.p>
-        </motion.div>
-
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-          {/* Left Column - Personal Story */}
-          <motion.div
-            className="space-y-8"
-            initial={{ opacity: 0, x: -50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ delay: 0.6, duration: 0.8 }}
-          >
-            <div className="space-y-6">
-              <h3 className="text-3xl font-bold text-white">
-                More About <span className="gradient-text">Rosh</span>
-              </h3>
-              
-              <p className="text-lg text-gray-300 leading-relaxed">
-                I started as an architect, but I've always been drawn to the spaces where tech, 
-                design, and storytelling intersect. From designing and developing fun apps, playful 
-                2D platformers to immersive virtual galleries, my work focuses on creating intuitive, 
-                engaging experiences.
-              </p>
-              
-              <p className="text-lg text-gray-300 leading-relaxed">
-                Whether I'm editing videos, designing interfaces, or prototyping AR ideas, I lean into 
-                curiosity, simplicity, and a bit of edge. I like getting my hands dirty technically, 
-                breaking barriers and mixing different fields of design.
-              </p>
-            </div>
-
-            {/* Personal Info Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {personalInfo.map((item, index) => (
-                <motion.div
-                  key={item.label}
-                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: 0.8 + index * 0.1, duration: 0.6 }}
-                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                >
-                  <div className="text-sm text-gray-400 mb-1">{item.label}</div>
-                  <div className="text-white font-semibold">{item.value}</div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* CTA Button */}
-            <motion.button
-              className="group flex items-center gap-3 px-8 py-4 bg-accent text-black font-bold rounded-full hover:bg-accent/90 transition-all duration-300"
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 1.2, duration: 0.6 }}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Download className="w-5 h-5" />
-              Download Resume
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </motion.button>
-          </motion.div>
-
-          {/* Right Column - Approach */}
-          <motion.div
-            className="space-y-8"
-            initial={{ opacity: 0, x: 50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ delay: 0.8, duration: 0.8 }}
-          >
-            <h3 className="text-3xl font-bold text-white text-center lg:text-left">
-              My <span className="gradient-text">Approach</span>
-            </h3>
+            <h2 className="text-xl md:text-2xl font-bold text-black uppercase tracking-tight">
+              MYSELF
+            </h2>
             
-            <div className="space-y-6">
-              {approachItems.map((item, index) => (
-                <motion.div
-                  key={item.number}
-                  className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: 1 + index * 0.2, duration: 0.6 }}
-                  whileHover={{ scale: 1.02, y: -5 }}
+            <div className="relative">
+              <SimpleWordWeave
+                text="I started as an architect, but I've always been drawn to the spaces where tech, design, and storytelling intersect. From designing and developing fun apps, playful 2D platformers to immersive virtual galleries, my work focuses on creating intuitive, engaging experiences"
+              />
+            </div>
+          </motion.div>
+
+          {/* Right Column - Interactive Video */}
+          <motion.div
+            ref={videoRef}
+            className="relative"
+            style={{ 
+              y: videoY,
+              opacity: videoOpacity,
+              scale: videoScale
+            }}
+          >
+            <div 
+              className="relative w-full aspect-[9/16] max-w-[400px] mx-auto bg-gray-200 rounded-2xl overflow-hidden shadow-2xl cursor-pointer group"
+              data-cursor="hover"
+              onClick={(e) => {
+                console.log('DIV CLICKED!', e)
+                toggleAudio(e)
+              }}
+              onMouseEnter={() => console.log('🖱️ Mouse entered video area')}
+              onMouseLeave={() => console.log('🖱️ Mouse left video area')}
+              style={{ zIndex: 50, position: 'relative' }}
+            >
+              {/* Video Element */}
+              <video
+                ref={videoElementRef}
+                src="/videos/POV.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                onLoadedMetadata={(e) => {
+                  const video = e.currentTarget
+                  console.log('=== ABOUT VIDEO LOADED ===')
+                  console.log('Duration:', video.duration, 'seconds')
+                  console.log('Volume:', video.volume)
+                  console.log('Muted:', video.muted)
+                  console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight)
+                  console.log('Has video:', video.videoWidth > 0)
+                  console.log('Ready to play')
+                  console.log('========================')
+                }}
+              />
+              
+              {/* Audio Indicator Overlay */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center pointer-events-none">
+                <motion.div 
+                  className="bg-black/50 backdrop-blur-sm rounded-full p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  initial={false}
+                  animate={{ scale: isMuted ? 1 : 1.1 }}
                 >
-                  {/* Background Gradient */}
-                  <div className={`absolute inset-0 bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
-                  
-                  <div className="relative z-10 flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <div className={`w-12 h-12 bg-gradient-to-r ${item.color} rounded-xl flex items-center justify-center`}>
-                        <item.icon className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl font-bold text-accent">{item.number}</span>
-                        <h4 className="text-xl font-semibold text-white">{item.title}</h4>
-                      </div>
-                      <p className="text-gray-300 leading-relaxed">{item.description}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Hover Effect Line */}
-                  <motion.div
-                    className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-accent to-blue-500 rounded-b-2xl"
-                    initial={{ width: 0 }}
-                    whileHover={{ width: "100%" }}
-                    transition={{ duration: 0.3 }}
-                  />
+                  {isMuted ? (
+                    // Muted Icon
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                  ) : (
+                    // Unmuted Icon
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                  )}
                 </motion.div>
-              ))}
+              </div>
             </div>
           </motion.div>
         </div>
-
-        {/* Bottom Quote */}
-        <motion.div
-          className="text-center mt-20"
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 1.4, duration: 0.8 }}
-        >
-          <blockquote className="text-2xl md:text-3xl text-white/80 italic font-light max-w-4xl mx-auto">
-            "Think Globally. Act Locally."
-          </blockquote>
-          <div className="text-accent font-medium mt-4">- My Design Philosophy</div>
-        </motion.div>
       </div>
-
-      {/* Floating Elements */}
-      {isClient && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-accent/30 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.3, 1, 0.3],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-        </div>
-      )}
     </motion.section>
   )
 }

@@ -10,12 +10,23 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/webgl_spookie pookie/Build/:path*',
+        // Only set br encoding for .br compressed files
+        source: '/webgl_spookie_pookie/Build/:path*.br',
         headers: [
           {
             key: 'Content-Encoding',
             value: 'br',
           },
+          {
+            key: 'Content-Type',
+            value: 'application/octet-stream',
+          },
+        ],
+      },
+      {
+        // Regular files without compression
+        source: '/webgl_spookie_pookie/Build/:path((?!.*\\.br$).*)',
+        headers: [
           {
             key: 'Content-Type',
             value: 'application/octet-stream',

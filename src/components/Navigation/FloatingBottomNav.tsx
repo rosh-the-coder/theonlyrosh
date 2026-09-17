@@ -7,6 +7,8 @@ import { Menu, X } from 'lucide-react'
 export default function FloatingBottomNav() {
   const [isOpen, setIsOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
+  const [workSectionVisible, setWorkSectionVisible] = useState(false)
+  const [aboutSectionVisible, setAboutSectionVisible] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +31,26 @@ export default function FloatingBottomNav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Listen for Work section visibility updates
+  useEffect(() => {
+    const handleWorkSectionUpdate = (event: CustomEvent) => {
+      setWorkSectionVisible(event.detail.isVisible)
+    }
+
+    window.addEventListener('work-section-visibility', handleWorkSectionUpdate as EventListener)
+    return () => window.removeEventListener('work-section-visibility', handleWorkSectionUpdate as EventListener)
+  }, [])
+
+  // Listen for About section visibility updates
+  useEffect(() => {
+    const handleAboutSectionUpdate = (event: CustomEvent) => {
+      setAboutSectionVisible(event.detail.isVisible)
+    }
+
+    window.addEventListener('about-section-visibility', handleAboutSectionUpdate as EventListener)
+    return () => window.removeEventListener('about-section-visibility', handleAboutSectionUpdate as EventListener)
+  }, [])
+
   const navItems = [
     { name: 'Home', href: '#home', id: 'home' },
     { name: 'Work', href: '#work', id: 'work' },
@@ -40,11 +62,53 @@ export default function FloatingBottomNav() {
     if (href.startsWith('/')) {
       // Handle route navigation for Video Editing
       window.location.href = href
+    } else if (href === '#contact') {
+      // Open email client for contact
+      window.location.href = 'mailto:theonlyroshn@gmail.com'
+    } else if (href === '#work') {
+      // Check if we're on video editing page
+      if (window.location.pathname === '/video-editing') {
+        // Navigate to main page and scroll to work after load
+        window.location.href = '/';
+        sessionStorage.setItem('scrollToWork', 'true');
+      } else {
+        // We're on main page - check if we're below Work section
+        const workSection = document.querySelector('#work');
+        if (workSection) {
+          const workRect = workSection.getBoundingClientRect();
+          const workTop = workRect.top + window.pageYOffset;
+          const currentScroll = window.pageYOffset;
+          
+          if (currentScroll > workTop) {
+            // We're below Work section - use InfoFooter logic to avoid Services overlay
+            const scrollTarget = workTop - 1200;
+            console.log('Below Work section - using InfoFooter logic, scroll target:', scrollTarget);
+            window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+          } else {
+            // We're above Work section - use current logic
+            const scrollTarget = workTop + 50;
+            console.log('Above Work section - using current logic, scroll target:', scrollTarget);
+            window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+          }
+        }
+      }
+    } else if (href === '#home') {
+      // Handle Home navigation
+      const homeSection = document.querySelector('#home') || document.querySelector('#hero');
+      if (homeSection) {
+        homeSection.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // If not on main page, navigate to main page first
+        window.location.href = '/';
+      }
     } else {
-      // Handle section scrolling
+      // Handle other section scrolling
       const element = document.querySelector(href)
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' })
+      } else {
+        // If not on main page, navigate to main page first
+        window.location.href = '/';
       }
     }
     setIsOpen(false)
@@ -54,18 +118,23 @@ export default function FloatingBottomNav() {
     <>
       {/* Floating Bottom Navigation */}
       <motion.nav
-        className="floating-bottom-nav"
+        className={`floating-bottom-nav ${aboutSectionVisible ? 'about-section-active' : ''}`}
         initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
+        animate={{ 
+          y: workSectionVisible ? 100 : 0, 
+          opacity: workSectionVisible ? 0 : 1 
+        }}
+        transition={{ duration: 0.6, ease: "easeInOut" }}
+        style={{ x: '-50%' }}
       >
         {/* Noise Texture Overlay for Glassmorphic Effect */}
         <div className="floating-bottom-nav-noise" />
         
-        <div className="flex items-center justify-between h-full relative z-10">
+        <div className="flex items-center h-full relative z-10 w-full" style={{ gap: '12px', width: '100%' }}>
           {/* Profile Picture */}
           <motion.div
             className="floating-bottom-nav-profile"
+            style={{ flexShrink: 0, flexGrow: 0 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => scrollToSection('#home')}
@@ -78,7 +147,7 @@ export default function FloatingBottomNav() {
           </motion.div>
 
           {/* Name and Title */}
-          <div className="floating-bottom-nav-content">
+          <div className="floating-bottom-nav-content" style={{ flex: '1 1 0%', minWidth: 0, overflow: 'hidden' }}>
             <motion.h2
               className="floating-bottom-nav-name"
               whileHover={{ scale: 1.05 }}
@@ -95,6 +164,7 @@ export default function FloatingBottomNav() {
           {/* Hamburger Menu */}
           <motion.button
             className="floating-bottom-nav-menu"
+            style={{ flexShrink: 0, flexGrow: 0 }}
             onClick={() => setIsOpen(!isOpen)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -112,7 +182,7 @@ export default function FloatingBottomNav() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end justify-center pb-32"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -120,7 +190,7 @@ export default function FloatingBottomNav() {
             onClick={() => setIsOpen(false)}
           >
             <motion.div
-              className="absolute bottom-32 left-[calc(35%-14px)] transform -translate-x-1/2 w-[600px]"
+              className="w-[600px] max-w-[calc(100vw-32px)]"
               style={{
                 background: 'rgba(255, 255, 255, 0.10)',
                 backdropFilter: 'blur(40px)',

@@ -1,0 +1,18 @@
+# Large video files - TOO BIG FOR VERCEL (100MB limit exceeded)
+# Solution: Upload to external CDN or YouTube
+public/video editing/videos/*.mp4
+public/video editing/videos/*.MOV
+public/video editing/videos/*.m4v
+public/videos/showreel-sample.mp4
+
+# Unity builds (keep only one)
+public/unity/
+public/webgl_spookie pookie/
+
+# Keep only the essential showreel
+!public/videos/theonlyrosh-showreel-fixed.mp4
+
+# Node modules and build artifacts
+node_modules/
+.next/
+*.log
