@@ -6,7 +6,7 @@ import { getVideoWork } from '@/components/VideoEditing/videoWork'
 import {
   MasonryGrid,
   type MasonryCardData,
-} from '@/components/ui/masonry-grid-with-scroll-animation'
+} from '@/components/UI/masonry-grid-with-scroll-animation'
 
 const SECTIONS = [
   {
