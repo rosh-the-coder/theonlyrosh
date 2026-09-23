@@ -89,35 +89,8 @@ export default function Services() {
 
     addHoverDisplacement();
 
-    // Helper to position overlay trigger mid-way through Work's pin
-    const midStart = () => {
-      const wp = ScrollTrigger.getById('work-pin') as any;
-      const isMobile = window.innerWidth <= 768;
-      
-      // Mobile: Trigger overlay earlier now that we have only 3 cards
-      if (isMobile) {
-        const workSection = document.getElementById('work');
-        if (workSection) {
-          const workRect = workSection.getBoundingClientRect();
-          const workOffsetTop = window.scrollY + workRect.top;
-          const workHeight = workSection.offsetHeight;
-          // Trigger at 70% through the Work section (after 3 cards)
-          return workOffsetTop + (workHeight * 0.7);
-        }
-      }
-      
-      // Desktop: Use Work pin logic
-      if (wp && typeof wp.start === 'number' && typeof wp.end === 'number') {
-        return wp.start + (wp.end - wp.start) * 0.85; // ~85% into the pin (near the end of Work section)
-      }
-      
-      // Desktop fallback: approximate (Work starts pin ~15% viewport and lasts ~1500px)
-      return window.scrollY + 1275; // ~85% of 1500px scroll distance
-    };
-
-    const midEnd = () => midStart() + 1; // tiny range so leaveBack fires right at the same point
-
-    // Overlay enters around mid Work pin; stays visible; reverses only when scrolling back above mid point
+    // Overlay used to key off Work's pin (when Work sat directly above Services).
+    // Work now comes earlier, so trigger from Services itself — keeps Spookie/About clear.
     const overlayTl = gsap.timeline({ paused: true })
       .fromTo(overlay, { xPercent: -100, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 1, ease: 'power3.out', duration: 0.6 });
 
@@ -129,8 +102,8 @@ export default function Services() {
 
     ScrollTrigger.create({
       id: 'services-overlay',
-      trigger: '#work',
-      start: midStart,
+      trigger: '#services',
+      start: 'top 85%',
       end: () => {
         // End when the last card (card-5) finishes its scroll animation
         const lastCardTrigger = ScrollTrigger.getById('card-5') || ScrollTrigger.getById('card-5-mobile');
@@ -140,9 +113,7 @@ export default function Services() {
       onLeave: () => { overlayTl.reverse(); dispatchDarkNav(false); },
       onEnterBack: () => { overlayTl.restart(); dispatchDarkNav(true); },
       onLeaveBack: () => { overlayTl.reverse(); dispatchDarkNav(false); },
-    });
-
-    const mm = gsap.matchMedia();
+    });    const mm = gsap.matchMedia();
 
     // large screens
     mm.add('(min-width: 769px)', () => {

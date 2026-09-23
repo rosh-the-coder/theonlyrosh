@@ -62,7 +62,7 @@ export default function InfoFooter() {
             const workSection = document.querySelector('#work');
             if (workSection) {
               const rect = workSection.getBoundingClientRect();
-              const scrollTop = window.pageYOffset + rect.top - 1200;
+              const scrollTop = Math.max(0, window.pageYOffset + rect.top + 50);
               window.scrollTo({ top: scrollTop, behavior: 'smooth' });
             }
           }}
@@ -149,12 +149,10 @@ export default function InfoFooter() {
            onMouseEnter={handleMouseEnter}
            onMouseLeave={handleMouseLeave}
            onClick={() => {
-             // Scroll to just before the Work section to avoid triggering the overlay
              const workSection = document.querySelector('#work');
              if (workSection) {
                const rect = workSection.getBoundingClientRect();
-               // Scroll to 1200px before the Work section starts
-               const scrollTop = window.pageYOffset + rect.top - 1200;
+               const scrollTop = Math.max(0, window.pageYOffset + rect.top + 50);
                window.scrollTo({ top: scrollTop, behavior: 'smooth' });
              }
            }}

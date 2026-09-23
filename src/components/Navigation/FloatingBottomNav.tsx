@@ -69,27 +69,17 @@ export default function FloatingBottomNav() {
       // Check if we're on video editing page
       if (window.location.pathname === '/video-editing') {
         // Navigate to main page and scroll to work after load
-        window.location.href = '/';
         sessionStorage.setItem('scrollToWork', 'true');
+        window.location.href = '/';
       } else {
-        // We're on main page - check if we're below Work section
+        // Work sits early (after Showreel) — scroll straight to it.
+        // Same landing offset as before when approaching from above (+50).
         const workSection = document.querySelector('#work');
         if (workSection) {
           const workRect = workSection.getBoundingClientRect();
           const workTop = workRect.top + window.pageYOffset;
-          const currentScroll = window.pageYOffset;
-          
-          if (currentScroll > workTop) {
-            // We're below Work section - use InfoFooter logic to avoid Services overlay
-            const scrollTarget = workTop - 1200;
-            console.log('Below Work section - using InfoFooter logic, scroll target:', scrollTarget);
-            window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-          } else {
-            // We're above Work section - use current logic
-            const scrollTarget = workTop + 50;
-            console.log('Above Work section - using current logic, scroll target:', scrollTarget);
-            window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-          }
+          const scrollTarget = Math.max(0, workTop + 50);
+          window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
         }
       }
     } else if (href === '#home') {

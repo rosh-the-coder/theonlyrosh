@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+// gsap + ScrollTrigger were used for work-section pinning (disabled below).
+// import { gsap } from 'gsap';
+// import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export default function Work() {
   const [activePanel, setActivePanel] = useState(0);
@@ -106,39 +107,33 @@ export default function Work() {
     };
   }, []);
 
-  // Pin Work section near end to keep it fixed while Services enters - DESKTOP ONLY
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    // Skip pinning on mobile
-    if (window.innerWidth <= 768) return;
-    
-    gsap.registerPlugin(ScrollTrigger);
-
-    if (!sectionRef.current) return;
-
-    const pinTrigger = ScrollTrigger.create({
-      trigger: sectionRef.current,
-      start: 'top -15%',
-      end: '+=1500',
-      pin: sectionRef.current,
-      pinSpacing: true,
-      id: 'work-pin'
-    });
-
-    return () => {
-      pinTrigger.kill();
-    };
-  }, []);
+  // Sticky/pin scroll disabled — was fighting later sections on the landing page.
+  // Previous GSAP ScrollTrigger pin lived here (trigger: #work, start: 'top -15%',
+  // end: '+=1500', pin + pinSpacing). Re-enable when the stack order is settled.
+  // useEffect(() => {
+  //   if (typeof window === 'undefined') return;
+  //   if (window.innerWidth <= 768) return;
+  //   gsap.registerPlugin(ScrollTrigger);
+  //   if (!sectionRef.current) return;
+  //   const pinTrigger = ScrollTrigger.create({
+  //     trigger: sectionRef.current,
+  //     start: 'top -15%',
+  //     end: '+=1500',
+  //     pin: sectionRef.current,
+  //     pinSpacing: true,
+  //     id: 'work-pin'
+  //   });
+  //   return () => { pinTrigger.kill(); };
+  // }, []);
 
   return (
-    <section id="work" ref={sectionRef} className="relative min-h-[250vh] md:min-h-screen bg-[#0B0B0B] py-10 md:py-20" style={{ zIndex: 20 }}>
+    <section id="work" ref={sectionRef} className="relative min-h-screen bg-[#0B0B0B] py-10 md:py-20" style={{ zIndex: 20 }}>
       <div className="w-full px-4 md:px-10">
         {/* Section Title and Year */}
         <div className="w-full mb-8 md:mb-12">
           <div className="flex justify-between items-center">
             <div className="text-[80px] sm:text-[120px] md:text-[160px] lg:text-[200px] font-teko font-normal text-white">WORK</div>
-            <div className="text-[80px] sm:text-[120px] md:text-[160px] lg:text-[200px] font-teko font-normal text-white">'25</div>
+            <div className="text-[80px] sm:text-[120px] md:text-[160px] lg:text-[200px] font-teko font-normal text-white">'26</div>
           </div>
         </div>
 

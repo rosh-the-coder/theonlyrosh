@@ -557,7 +557,7 @@ export default function VideoEditing() {
       />
 
       {/* Video Editing Title */}
-      <div className="absolute top-12 md:top-20 left-1/2 transform -translate-x-1/2 z-10 px-4 md:px-0 max-w-[90vw] md:max-w-none">
+      <div className="absolute top-20 md:top-24 left-1/2 transform -translate-x-1/2 z-10 px-4 md:px-0 max-w-[90vw] md:max-w-none">
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white font-teko tracking-wider text-center">
           VIDEO EDITING
         </h1>

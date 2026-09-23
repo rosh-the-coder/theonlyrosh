@@ -1,0 +1,11 @@
+.masonry-card-wrapper {
+  opacity: 0;
+  transform: translateY(72px) scale(0.8) rotate(var(--tilt, 8deg));
+  transform-origin: center bottom;
+  transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.masonry-card-wrapper[data-revealed='true'] {
+  opacity: 1;
+  transform: translateY(0) scale(1) rotate(0deg);
+}

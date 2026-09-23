@@ -100,13 +100,13 @@ export default function Page() {
              <Navigation />
              <Showreel />
              <Suspense fallback={<div className="h-screen bg-black" />}>
+               <Work />
+             </Suspense>
+             <Suspense fallback={<div className="h-screen bg-black" />}>
                <SpookiePookieEntry />
              </Suspense>
              <Suspense fallback={<div className="h-screen bg-black" />}>
                <About />
-             </Suspense>
-             <Suspense fallback={<div className="h-screen bg-black" />}>
-               <Work />
              </Suspense>
              <Suspense fallback={<div className="h-screen bg-black" />}>
                <Services />
