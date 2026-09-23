@@ -36,7 +36,6 @@ const SHOWITON_PREFIX = `${R2_CDN}/irish-ai-creative/showiton`
 const GTD_PREFIX = `${R2_CDN}/irish-ai-creative/gtd`
 const WILLY_PREFIX = `${R2_CDN}/irish-ai-creative/willy-jean-luc`
 const UGC_PREFIX = `${R2_CDN}/irish-ai-creative/ugc`
-const PLACEHOLDER_COUNT = 12
 
 function hostedCards(idPrefix: string, cdnPrefix: string, count: number, padUrls: boolean): MasonryCardData[] {
   return Array.from({ length: count }, (_, index) => {
@@ -62,37 +61,24 @@ function sectionId(title: string) {
     .replace(/(^-|-$)/g, '')
 }
 
-function placeholderCards(section: string): MasonryCardData[] {
-  return Array.from({ length: PLACEHOLDER_COUNT }, (_, index) => {
-    const number = String(index + 1).padStart(2, '0')
-    const title = `${section} ${number}`
-
-    return {
-      id: `${section}-${number}`,
-      src: '',
-      alt: title,
-      content: 'Placeholder clip.',
-      linkHref: '#',
-      linkText: title,
-      video: '',
-    }
-  })
+function cardsFor(title: (typeof SECTIONS)[number]['title']) {
+  switch (title) {
+    case 'ShowItOn':
+      return hostedCards('showiton', SHOWITON_PREFIX, 16, true)
+    case 'UGC':
+      return hostedCards('ugc', UGC_PREFIX, 15, true)
+    case 'AI Marketing':
+      return hostedCards('ai-marketing', AI_MARKETING_PREFIX, 7, false)
+    case 'Gold Testing Dublin(GTD)':
+      return hostedCards('gtd', GTD_PREFIX, 12, true)
+    case 'Willy & Jean-Luc':
+      return hostedCards('willy', WILLY_PREFIX, 10, true)
+  }
 }
 
 const SECTIONS_WITH_CARDS = SECTIONS.map((section) => ({
   ...section,
-  items:
-    section.title === 'ShowItOn'
-      ? hostedCards('showiton', SHOWITON_PREFIX, 16, true)
-      : section.title === 'UGC'
-        ? hostedCards('ugc', UGC_PREFIX, 15, true)
-        : section.title === 'AI Marketing'
-        ? hostedCards('ai-marketing', AI_MARKETING_PREFIX, 7, false)
-        : section.title === 'Gold Testing Dublin(GTD)'
-          ? hostedCards('gtd', GTD_PREFIX, 12, true)
-          : section.title === 'Willy & Jean-Luc'
-            ? hostedCards('willy', WILLY_PREFIX, 10, true)
-            : placeholderCards(section.title),
+  items: cardsFor(section.title),
 }))
 
 export default function IrishAICreative() {
@@ -145,7 +131,7 @@ export default function IrishAICreative() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const scrollToSection = (title: string) => {
+  const scrollToSection = (title: (typeof SECTIONS)[number]['title']) => {
     setActiveSection(title)
     document.getElementById(sectionId(title))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
