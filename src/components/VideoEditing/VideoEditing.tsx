@@ -566,16 +566,6 @@ export default function VideoEditing() {
         </p>
       </div>
 
-      {/* See My Work Button */}
-      <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-[9999] pointer-events-auto">
-        <button
-          onClick={() => window.open('https://roshanedits.myportfolio.com/two-blokes-trading', '_blank')}
-          className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-2 md:px-6 md:py-3 text-white font-teko font-normal text-base md:text-lg hover:bg-white/20 hover:backdrop-blur-lg transition-all duration-300 hover:scale-105"
-        >
-          See my work
-        </button>
-      </div>
-
        {/* Video Player Modal */}
        {isVideoOpen && currentVideo && (
          <div 
