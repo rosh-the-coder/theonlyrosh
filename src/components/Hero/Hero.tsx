@@ -6,16 +6,33 @@ import { Suspense, useState, useEffect, useRef } from "react";
 import RippleReveal from "../RippleReveal";
 import { useAudioManager } from "@/contexts/AudioContext";
 
+const HERO_TEXT = [
+  { text: "i am", x: 40, y: 200, size: 24, color: "#FFF", font: "Teko", fontWeight: 100 },
+  { text: "ROSH", x: 600, y: 200, size: 30, color: "#FFF", font: "Teko", fontWeight: 100 },
+  { text: "a", x: 1170, y: 200, size: 24, color: "#FFF", font: "Teko", fontWeight: 100 },
+  { text: "DESIGN ENGINEER", x: 600, y: 300, size: 173, color: "#FE5454", font: "Teko", fontWeight: 700, letterSpacing: "1.04px" },
+  { text: "\" A designer who isn't afraid of code. \"", x: 1080, y: 345, size: 16, color: "#FFF", font: "Teko", fontWeight: 50 },
+  { text: "some crazy", x: 1125, y: 540, size: 24, color: "#FFF", font: "Big Shoulders Stencil Text", fontWeight: 100 },
+  { text: "SHIT", x: 1096, y: 570, size: 24, color: "#FFF", font: "Big Shoulders Stencil Text", fontWeight: 700 },
+];
+
+const HERO_ICONS = [
+  { icon: "/icons/down.png", x: 1165, y: 570, size: 24, color: "#FFF", isImage: true },
+];
+
 export default function Hero() {
   const [revealEnabled, setRevealEnabled] = useState(true);
+  const [webglActive, setWebglActive] = useState(true);
   const [isClient, setIsClient] = useState(false);
-  const [showreelCoverage, setShowreelCoverage] = useState(0);
   const [lowPowerMode, setLowPowerMode] = useState(false);
   const [canvasReady, setCanvasReady] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showreelMuted, setShowreelMuted] = useState(true);
   const [showreelAudioEnabled, setShowreelAudioEnabled] = useState(false);
   const showreelVideoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const coverageRef = useRef(0);
+  const exitYRef = useRef(0);
   const audioManager = useAudioManager();
 
   useEffect(() => {
@@ -52,28 +69,59 @@ export default function Hero() {
   const CANVAS_CENTER_X = 600;
   const CANVAS_CENTER_Y = 300;
 
-  // Listen for Showreel coverage updates
+  // Listen for Showreel coverage updates. The same exit math is applied on the
+  // section directly so scroll progress does not re-render the WebGL tree.
   useEffect(() => {
-    const handleShowreelUpdate = (event: CustomEvent) => {
-      setShowreelCoverage(event.detail.coverage);
+    const handleShowreelUpdate = (event: Event) => {
+      const coverage = (event as CustomEvent<{ coverage: number }>).detail.coverage;
+      coverageRef.current = coverage;
+      const exitThreshold = 0.8;
+      const exitProgress = Math.max(0, (coverage - exitThreshold) / (1 - exitThreshold));
+      exitYRef.current = exitProgress > 0 ? exitProgress * -120 : 0;
+      const el = sectionRef.current;
+      if (!el) return;
+      el.style.transform = `translateY(${exitYRef.current}vh)`;
+      el.style.pointerEvents = coverage > 0.2 ? "none" : "auto";
     };
 
-    window.addEventListener('showreel-coverage-update', handleShowreelUpdate as EventListener);
-    return () => window.removeEventListener('showreel-coverage-update', handleShowreelUpdate as EventListener);
+    window.addEventListener('showreel-coverage-update', handleShowreelUpdate);
+    return () => window.removeEventListener('showreel-coverage-update', handleShowreelUpdate);
   }, []);
 
-  // Calculate exit animation based on Showreel coverage
-  const exitThreshold = 0.8; // Start exit animation at 80% coverage (when fully covered)
-  const exitProgress = Math.max(0, (showreelCoverage - exitThreshold) / (1 - exitThreshold));
-  const exitY = exitProgress * -120; // Move up by 120vh to ensure completely off-screen
+  // Pause the existing R3F loop without unmounting the canvas. React Three Fiber
+  // restarts that same loop when frameloop returns to "always".
+  useEffect(() => {
+    const element = sectionRef.current;
+    let onScreen = true;
+    let tabVisible = document.visibilityState === "visible";
 
-  // Smooth exit animation with better easing
-  const exitYValue = exitProgress > 0 ? exitY : 0;
+    const apply = () => {
+      const next = onScreen && tabVisible;
+      setWebglActive((current) => (current === next ? current : next));
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      onScreen = entries.some((entry) => entry.isIntersecting);
+      apply();
+    }, { root: null, rootMargin: "10% 0px", threshold: 0 });
+    if (element) observer.observe(element);
+
+    const onVisibility = () => {
+      tabVisible = document.visibilityState === "visible";
+      apply();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   const handleCanvasClick = () => {
     // Only allow toggle if Showreel hasn't fully covered the screen
     const showreelCoverageThreshold = 0.8;
-    if (showreelCoverage < showreelCoverageThreshold) {
+    if (coverageRef.current < showreelCoverageThreshold) {
       console.log('Canvas clicked! Current revealEnabled:', revealEnabled);
       setRevealEnabled(!revealEnabled);
     } else {
@@ -114,11 +162,9 @@ export default function Hero() {
       video.setAttribute('loop', 'loop');
       video.playsInline = true;
       
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Autoplay might be blocked, that's okay
-        });
+      if (document.visibilityState === 'visible') {
+        const playPromise = video.play();
+        if (playPromise !== undefined) playPromise.catch(() => {});
       }
     }
   }, [isMobile]);
@@ -129,10 +175,16 @@ export default function Hero() {
     
     const video = showreelVideoRef.current;
     
+    const safePlay = () => {
+      if (document.visibilityState !== 'visible') return
+      const playPromise = video.play()
+      if (playPromise !== undefined) playPromise.catch(() => {})
+    }
+
     const handleTimeUpdate = () => {
       if (video.duration > 0 && video.currentTime >= video.duration - 0.5) {
         video.currentTime = 0;
-        video.play().catch(() => {});
+        safePlay()
       }
     };
 
@@ -140,15 +192,25 @@ export default function Hero() {
       video.loop = true;
       video.setAttribute('loop', 'loop');
       video.currentTime = 0;
-      video.play().catch(() => {});
+      safePlay()
     };
+
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') {
+        if (!video.paused) video.pause()
+        return
+      }
+      safePlay()
+    }
 
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [isMobile]);
 
@@ -165,13 +227,13 @@ export default function Hero() {
   }, [audioManager.activeAudio, isMobile, showreelAudioEnabled]);
 
   return (
-    <section 
-      className={`fixed inset-0 h-[100svh] bg-[#0B0B0B] overflow-hidden select-none hero-protection z-10 ${
-        showreelCoverage > 0.2 ? 'pointer-events-none' : 'pointer-events-auto'
-      }`}
+    <section
+      ref={sectionRef}
+      className="fixed inset-0 h-[100svh] bg-[#0B0B0B] overflow-hidden select-none hero-protection z-10"
       style={{
-        transform: `translateY(${exitYValue}vh)`,
-        transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+        transform: `translateY(${exitYRef.current}vh)`,
+        transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+        pointerEvents: coverageRef.current > 0.2 ? 'none' : 'auto',
       }}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
@@ -351,7 +413,7 @@ export default function Hero() {
           onError={(error) => {
             console.warn('Canvas error:', error);
           }}
-          frameloop="always" // Keep rendering for interactive effects
+          frameloop={webglActive ? "always" : "never"}
           performance={{
             current: 1,
             min: 0.5,
@@ -362,17 +424,8 @@ export default function Hero() {
           <Suspense fallback={<div className="absolute inset-0 bg-[#0B0B0B]" />}>
             <RippleReveal
               imageUrl="/rosh-placeholder.jpg"
-              textElements={[
-                // Desktop layout
-                { text: "i am", x: 40, y: 200, size: 24, color: "#FFF", font: "Teko", fontWeight: 100 },
-                { text: "ROSH", x: 600, y: 200, size: 30, color: "#FFF", font: "Teko", fontWeight: 100 },
-                { text: "a", x: 1170, y: 200, size: 24, color: "#FFF", font: "Teko", fontWeight: 100 },
-                { text: "DESIGN ENGINEER", x: 600, y: 300, size: 173, color: "#FE5454", font: "Teko", fontWeight: 700, letterSpacing: "1.04px" },
-                { text: "\" A designer who isn't afraid of code. \"", x: 1080, y: 345, size: 16, color: "#FFF", font: "Teko", fontWeight: 50 },
-                { text: "some crazy", x: 1125, y: 540, size: 24, color: "#FFF", font: "Big Shoulders Stencil Text", fontWeight: 100 },
-                { text: "SHIT", x: 1096, y: 570, size: 24, color: "#FFF", font: "Big Shoulders Stencil Text", fontWeight: 700 },
-              ]}
-              iconElements={[{ icon: "/icons/down.png", x: 1165, y: 570, size: 24, color: "#FFF", isImage: true }]}
+              textElements={HERO_TEXT}
+              iconElements={HERO_ICONS}
               chroma={0.002}
               decay={0.975}
               brushRadiusPxAt1440={lowPowerMode ? 80 : 140}

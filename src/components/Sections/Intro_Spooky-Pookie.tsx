@@ -14,6 +14,7 @@ interface SpectralGhostSectionProps {
 }
 
 export default function SpectralGhostSection({ children, showControls = true }: SpectralGhostSectionProps) {
+  const sectionRef = useRef<HTMLElement | null>(null);
   const mountRef = useRef<HTMLDivElement | null>(null);
   const preloaderRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -31,13 +32,19 @@ export default function SpectralGhostSection({ children, showControls = true }: 
       const pct = Math.min(n, total) / total * 100;
       progressEl.style.width = `${pct}%`;
     };
+    const pendingTimers: number[] = [];
+    const later = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(fn, ms);
+      pendingTimers.push(id);
+      return id;
+    };
     const complete = (canvas: HTMLCanvasElement) => {
       bump(5);
-        setTimeout(() => {
+      later(() => {
         preloaderEl.classList.add("sg-fade-out");
         contentEl.classList.add("sg-fade-in");
         canvas.classList.add("sg-canvas-in");
-        setTimeout(() => (preloaderEl.style.display = "none"), 900);
+        later(() => { preloaderEl.style.display = "none"; }, 900);
       }, 600);
     };
 
@@ -268,14 +275,16 @@ export default function SpectralGhostSection({ children, showControls = true }: 
 
     // Mouse → ghost follow
     const mouse = new THREE.Vector2(), prevMouse = new THREE.Vector2(), mouseSpeed = new THREE.Vector2();
-    let isMouseMoving=false, lastUpdate=0, moveTimer:any=null;
+    let isMouseMoving=false, lastUpdate=0, moveTimer: ReturnType<typeof setTimeout> | null = null;
     const onMouse = (e: MouseEvent) => {
       const now = performance.now(); if (now - lastUpdate < 16) return;
       prevMouse.copy(mouse);
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       mouseSpeed.subVectors(mouse, prevMouse);
-      isMouseMoving = true; clearTimeout(moveTimer); moveTimer=setTimeout(()=>isMouseMoving=false, 80);
+      isMouseMoving = true;
+      if (moveTimer) clearTimeout(moveTimer);
+      moveTimer = setTimeout(() => { isMouseMoving = false; }, 80);
       lastUpdate = now;
     };
     window.addEventListener("mousemove", onMouse);
@@ -291,13 +300,34 @@ export default function SpectralGhostSection({ children, showControls = true }: 
     const ro = new ResizeObserver(onResize); ro.observe(mountRef.current);
 
     // Warm up & reveal
-    setTimeout(() => complete(renderer.domElement), 350);
+    later(() => complete(renderer.domElement), 350);
 
-    // Animate
+    // Animate — one loop, started only while the section and the tab are visible.
+    let disposed = false;
+    let frameId = 0;
+    let loopOn = false;
+    let sectionVisible = false;
+    let tabVisible = document.visibilityState === "visible";
     let time=0, last=0, currentMove=0, lastParticle=0;
+
+    const canRun = () => !disposed && sectionVisible && tabVisible;
+
+    const stopLoop = () => {
+      loopOn = false;
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+        frameId = 0;
+      }
+    };
+
     const animate = (ts:number) => {
+      frameId = 0;
+      if (!canRun()) {
+        loopOn = false;
+        return;
+      }
+
       const dt = Math.min(100, ts-last); last = ts;
-      requestAnimationFrame(animate);
       time += (dt/16.67) * 0.01;
 
       atmosphereMat.uniforms.time.value = time;
@@ -351,15 +381,47 @@ export default function SpectralGhostSection({ children, showControls = true }: 
         if (Math.abs(ff.position.z)>15) ud.vel.z *= -0.5;
       });
 
+      if (!canRun()) {
+        loopOn = false;
+        return;
+      }
       composer.render();
+      if (!canRun()) {
+        loopOn = false;
+        return;
+      }
+      frameId = requestAnimationFrame(animate);
     };
-    requestAnimationFrame(animate);
+
+    const startLoop = () => {
+      if (!canRun() || loopOn) return;
+      loopOn = true;
+      frameId = requestAnimationFrame(animate);
+    };
+
+    const sectionEl = sectionRef.current ?? mountRef.current;
+    const io = new IntersectionObserver((entries) => {
+      sectionVisible = entries.some((entry) => entry.isIntersecting);
+      if (sectionVisible) startLoop();
+      else stopLoop();
+    }, { root: null, rootMargin: "20% 0px", threshold: 0 });
+    if (sectionEl) io.observe(sectionEl);
+
+    const onVisibility = () => {
+      tabVisible = document.visibilityState === "visible";
+      if (tabVisible) startLoop();
+      else stopLoop();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     // --------- Tweakpane (settings UI) ---------
+    let paneAlive = true;
+    let paneCleanup: (() => void) | null = null;
     (async () => {
       try {
         const { Pane } = await import("tweakpane");
-        const pane = new Pane({ title: "Spectral Ghost", container: paneHostRef.current!, expanded: true });
+        if (!paneAlive || !paneHostRef.current) return;
+        const pane = new Pane({ title: "Spectral Ghost", container: paneHostRef.current, expanded: true });
         pane.element.style.position = "absolute";
         pane.element.style.top = "20px";
         pane.element.style.right = "20px";
@@ -410,6 +472,20 @@ export default function SpectralGhostSection({ children, showControls = true }: 
         pane.element.addEventListener("mousedown", handleMouseDown);
         document.addEventListener("mousemove", handleMouseMove);
         document.addEventListener("mouseup", handleMouseUp);
+        let paneReleased = false;
+        const releasePane = () => {
+          if (paneReleased) return;
+          paneReleased = true;
+          pane.element.removeEventListener("mousedown", handleMouseDown);
+          document.removeEventListener("mousemove", handleMouseMove);
+          document.removeEventListener("mouseup", handleMouseUp);
+          pane.dispose();
+        };
+        paneCleanup = releasePane;
+        if (!paneAlive) {
+          releasePane();
+          return;
+        }
 
         const reveal = (pane as any).addFolder({ title: "Background Reveal", expanded: true });
         reveal.addBinding(params, "revealRadius", { label: "Radius", min: 10, max: 140, step: 2 })
@@ -430,6 +506,7 @@ export default function SpectralGhostSection({ children, showControls = true }: 
         eyesFolder.addBinding(params, "eyeGlowResponse", { label: "Response", min: 0.05, max: 0.6, step: 0.01 });
         eyesFolder.addBinding(params, "eyeGlowDecay", { label: "Decay", min: 0.9, max: 0.99, step: 0.01 });
       } catch (e) {
+        if (!paneAlive) return;
         // if tweakpane not installed, silently ignore
         console.warn("Tweakpane not available. Run `npm i tweakpane`.", e);
       }
@@ -437,8 +514,17 @@ export default function SpectralGhostSection({ children, showControls = true }: 
 
     // Cleanup
     return () => {
+      disposed = true;
+      paneAlive = false;
+      stopLoop();
+      pendingTimers.forEach((id) => clearTimeout(id));
+      if (moveTimer) clearTimeout(moveTimer);
+      paneCleanup?.();
+      paneCleanup = null;
+      io.disconnect();
       ro.disconnect();
       window.removeEventListener("mousemove", onMouse);
+      document.removeEventListener("visibilitychange", onVisibility);
       composer.dispose();
       renderer.dispose();
       mountRef.current?.contains(renderer.domElement) && mountRef.current.removeChild(renderer.domElement);
@@ -451,7 +537,7 @@ export default function SpectralGhostSection({ children, showControls = true }: 
   }, [showControls]);
 
   return (
-    <section className="sg-root" style={{ paddingTop: '500px', paddingBottom: '500px' }}>
+    <section ref={sectionRef} className="sg-root" style={{ paddingTop: '500px', paddingBottom: '500px' }}>
       {/* Background layer so reveal is obvious */}
       <div
         className="sg-bg"

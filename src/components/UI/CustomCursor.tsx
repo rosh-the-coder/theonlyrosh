@@ -1,155 +1,189 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+const TRAIL_EASE = 0.12
+const REST_DISTANCE_SQ = 0.25
+
+function exclusionColorAt(x: number, y: number): string {
+  let backgroundColor = 'rgb(11, 11, 11)'
+  const element = document.elementFromPoint(x, y)
+
+  if (!element) return '#FE5454'
+
+  let currentElement = element as HTMLElement
+  while (currentElement && currentElement !== document.body) {
+    const computedStyle = window.getComputedStyle(currentElement)
+    const bg = computedStyle.backgroundColor
+
+    if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+      backgroundColor = bg
+      break
+    }
+
+    currentElement = currentElement.parentElement as HTMLElement
+  }
+
+  if (backgroundColor === 'rgb(11, 11, 11)') {
+    const bodyStyle = window.getComputedStyle(document.body)
+    const bodyBg = bodyStyle.backgroundColor
+    if (bodyBg && bodyBg !== 'transparent' && bodyBg !== 'rgba(0, 0, 0, 0)') {
+      backgroundColor = bodyBg
+    }
+  }
+
+  let r = 11, g = 11, b = 11
+
+  const rgbMatch = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
+  if (rgbMatch) {
+    r = parseInt(rgbMatch[1], 10)
+    g = parseInt(rgbMatch[2], 10)
+    b = parseInt(rgbMatch[3], 10)
+  } else {
+    const rgbaMatch = backgroundColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
+    if (rgbaMatch) {
+      r = parseInt(rgbaMatch[1], 10)
+      g = parseInt(rgbaMatch[2], 10)
+      b = parseInt(rgbaMatch[3], 10)
+    }
+  }
+
+  const exclusionR = 255 - r
+  const exclusionG = 255 - g
+  const exclusionB = 255 - b
+
+  return `#${((1 << 24) + (exclusionR << 16) + (exclusionG << 8) + exclusionB).toString(16).slice(1)}`
+}
+
+function place(el: HTMLDivElement | null, x: number, y: number) {
+  if (!el) return
+  el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`
+}
 
 export default function CustomCursor() {
-  const [isMounted, setIsMounted] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
-  const [trailPos, setTrailPos] = useState({ x: 0, y: 0 })
+  const [isActive, setIsActive] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const [isClicking, setIsClicking] = useState(false)
   const [cursorColor, setCursorColor] = useState('#FE5454')
 
+  const dotRef = useRef<HTMLDivElement>(null)
+  const ringRef = useRef<HTMLDivElement>(null)
+  const mouseRef = useRef({ x: 0, y: 0 })
+  const trailRef = useRef({ x: 0, y: 0 })
+  const hoveringRef = useRef(false)
+  const clickingRef = useRef(false)
+  const colorRef = useRef('#FE5454')
+  const lastTargetRef = useRef<EventTarget | null>(null)
+
   useEffect(() => {
-    setIsMounted(true)
-    // Check if it's a mobile device
-    setIsMobile(window.innerWidth <= 768)
-    
-    let animationId: number
-    
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY })
+    if (window.innerWidth <= 768) return
+
+    let alive = true
+    let frameId = 0
+    let loopOn = false
+
+    setIsActive(true)
+
+    const paintTrail = () => {
+      place(ringRef.current, trailRef.current.x, trailRef.current.y)
     }
 
-    const animateTrail = () => {
-      setTrailPos(prev => {
-        const dx = mousePos.x - prev.x
-        const dy = mousePos.y - prev.y
-        
-        return {
-          x: prev.x + dx * 0.12, // Smooth trailing (0.1 = very smooth, 0.2 = more responsive)
-          y: prev.y + dy * 0.12
-        }
-      })
-      
-      animationId = requestAnimationFrame(animateTrail)
-    }
-
-    const handleMouseDown = () => setIsClicking(true)
-    const handleMouseUp = () => setIsClicking(false)
-
-    // Check for interactive elements and get color
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      
-      // Check for interactive elements
-      if (target.closest('button, a, [data-cursor="hover"]')) {
-        setIsHovering(true)
-      } else {
-        setIsHovering(false)
+    const tick = () => {
+      frameId = 0
+      if (!alive) {
+        loopOn = false
+        return
       }
-      
-      // Get the actual visible background color by traversing up the DOM tree
-      let backgroundColor = 'rgb(11, 11, 11)' // Default to your website's dark background
-      const element = document.elementFromPoint(e.clientX, e.clientY)
-      
-      if (element) {
-        // Walk up the DOM tree to find the first non-transparent background
-        let currentElement = element as HTMLElement
-        while (currentElement && currentElement !== document.body) {
-          const computedStyle = window.getComputedStyle(currentElement)
-          const bg = computedStyle.backgroundColor
-          
-          // Check if this element has a non-transparent background
-          if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
-            backgroundColor = bg
-            break
-          }
-          
-          currentElement = currentElement.parentElement as HTMLElement
-        }
-        
-        // If no background found, check body
-        if (backgroundColor === 'rgb(11, 11, 11)') {
-          const bodyStyle = window.getComputedStyle(document.body)
-          const bodyBg = bodyStyle.backgroundColor
-          if (bodyBg && bodyBg !== 'transparent' && bodyBg !== 'rgba(0, 0, 0, 0)') {
-            backgroundColor = bodyBg
-          }
-        }
-        
-        // Convert background color to RGB values
-        let r = 11, g = 11, b = 11 // Default to your dark background
-        
-        // Handle RGB
-        const rgbMatch = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
-        if (rgbMatch) {
-          r = parseInt(rgbMatch[1])
-          g = parseInt(rgbMatch[2])
-          b = parseInt(rgbMatch[3])
-        }
-        // Handle RGBA
-        else {
-          const rgbaMatch = backgroundColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
-          if (rgbaMatch) {
-            r = parseInt(rgbaMatch[1])
-            g = parseInt(rgbaMatch[2])
-            b = parseInt(rgbaMatch[3])
-          }
-        }
-        
-        // Calculate exclusion color (opposite color)
-        const exclusionR = 255 - r
-        const exclusionG = 255 - g
-        const exclusionB = 255 - b
-        
-        // Convert to hex
-        const exclusionColor = `#${((1 << 24) + (exclusionR << 16) + (exclusionG << 8) + exclusionB).toString(16).slice(1)}`
-        
-        setCursorColor(exclusionColor)
-      } else {
-        // Default to brand red when no element found
-        setCursorColor('#FE5454')
+
+      const dx = mouseRef.current.x - trailRef.current.x
+      const dy = mouseRef.current.y - trailRef.current.y
+
+      if (dx * dx + dy * dy < REST_DISTANCE_SQ) {
+        trailRef.current.x = mouseRef.current.x
+        trailRef.current.y = mouseRef.current.y
+        paintTrail()
+        loopOn = false
+        return
       }
+
+      trailRef.current.x += dx * TRAIL_EASE
+      trailRef.current.y += dy * TRAIL_EASE
+      paintTrail()
+      frameId = requestAnimationFrame(tick)
     }
 
-    window.addEventListener('mousemove', updateMousePosition)
-    window.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mousedown', handleMouseDown)
-    document.addEventListener('mouseup', handleMouseUp)
-    
-    // Start the trailing animation
-    animationId = requestAnimationFrame(animateTrail)
+    const startLoop = () => {
+      if (!alive || loopOn) return
+      loopOn = true
+      frameId = requestAnimationFrame(tick)
+    }
+
+    const setHover = (next: boolean) => {
+      if (!alive || next === hoveringRef.current) return
+      hoveringRef.current = next
+      setIsHovering(next)
+    }
+
+    const setClicking = (next: boolean) => {
+      if (!alive || next === clickingRef.current) return
+      clickingRef.current = next
+      setIsClicking(next)
+    }
+
+    const setColor = (next: string) => {
+      if (!alive || next === colorRef.current) return
+      colorRef.current = next
+      setCursorColor(next)
+    }
+
+    const onMove = (e: MouseEvent) => {
+      mouseRef.current.x = e.clientX
+      mouseRef.current.y = e.clientY
+      place(dotRef.current, e.clientX, e.clientY)
+      startLoop()
+
+      if (e.target === lastTargetRef.current) return
+      lastTargetRef.current = e.target
+
+      const target = e.target instanceof Element ? e.target : null
+      setHover(!!target?.closest('button, a, [data-cursor="hover"]'))
+      setColor(exclusionColorAt(e.clientX, e.clientY))
+    }
+
+    const onDown = () => setClicking(true)
+    const onUp = () => setClicking(false)
+
+    window.addEventListener('mousemove', onMove)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('mouseup', onUp)
 
     return () => {
-      window.removeEventListener('mousemove', updateMousePosition)
-      window.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mousedown', handleMouseDown)
-      document.removeEventListener('mouseup', handleMouseUp)
-      cancelAnimationFrame(animationId)
+      alive = false
+      loopOn = false
+      if (frameId) cancelAnimationFrame(frameId)
+      window.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('mouseup', onUp)
     }
-  }, [mousePos.x, mousePos.y])
+  }, [])
 
-  // Don't render until mounted (prevents hydration errors)
-  if (!isMounted) {
-    return null
-  }
+  useEffect(() => {
+    if (!isActive) return
+    place(dotRef.current, mouseRef.current.x, mouseRef.current.y)
+    place(ringRef.current, trailRef.current.x, trailRef.current.y)
+  }, [isActive])
 
-  // Don't render on mobile devices
-  if (isMobile) {
-    return null
-  }
+  if (!isActive) return null
 
   return (
     <>
-      {/* Trailing circle - smooth lag effect */}
       <div
+        ref={ringRef}
         className="fixed pointer-events-none z-[9998]"
         style={{
-          left: trailPos.x,
-          top: trailPos.y,
-          transform: 'translate(-50%, -50%)',
+          left: 0,
+          top: 0,
+          transform: 'translate3d(0px, 0px, 0) translate(-50%, -50%)',
         }}
       >
         <div
@@ -162,13 +196,13 @@ export default function CustomCursor() {
         />
       </div>
 
-      {/* Main cursor dot - immediate response */}
       <div
+        ref={dotRef}
         className="fixed pointer-events-none z-[9999]"
         style={{
-          left: mousePos.x,
-          top: mousePos.y,
-          transform: 'translate(-50%, -50%)',
+          left: 0,
+          top: 0,
+          transform: 'translate3d(0px, 0px, 0) translate(-50%, -50%)',
         }}
       >
         <div

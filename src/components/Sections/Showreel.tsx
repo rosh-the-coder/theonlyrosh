@@ -19,6 +19,8 @@ export default function Showreel() {
   })
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const wantsPlaybackRef = useRef(false)
+  const playbackStartRef = useRef<number | null>(null)
   const audioManager = useAudioManager()
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -135,117 +137,116 @@ export default function Showreel() {
     }
   }
 
-  // FORCE PAUSE audio when not visible - THIS ACTUALLY STOPS THE AUDIO
+  // Play only once scroll progress leaves the resting hero position, and before
+  // the clip slides in at entryStart. Pause off screen or while the tab is hidden.
+  // audioEnabled stays the user's choice; this effect does not clear it.
   useEffect(() => {
-    const unsubscribe = scrollYProgress.on('change', (latest) => {
-      if (!videoRef.current) return;
-      
-      const isVisible = latest >= entryStart && latest < exitEnd;
-      
-      if (!isVisible) {
-        // PAUSE THE VIDEO - this actually stops audio from playing
-        if (!videoRef.current.paused) {
-          videoRef.current.pause();
-        }
-        videoRef.current.muted = true;
-        videoRef.current.volume = 0;
-        setIsMuted(true);
-        return;
-      }
-      
-      // Resume playing when visible
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(() => {});
-      }
-      
-      // Control volume based on audioEnabled
-      if (audioEnabled) {
-        let volume = 0.8;
-        
-        if (latest >= entryStart && latest < staticStart) {
-          const progress = (latest - entryStart) / (staticStart - entryStart);
-          volume = 0.8 * progress;
-        } else if (latest >= staticStart && latest < exitStart) {
-          volume = 0.8;
-        } else if (latest >= exitStart) {
-          const progress = (latest - exitStart) / (exitEnd - exitStart);
-          volume = 0.8 * (1 - progress);
-        }
-        
-        videoRef.current.muted = false;
-        videoRef.current.volume = volume;
-        setIsMuted(false);
-      } else {
-        videoRef.current.muted = true;
-        setIsMuted(true);
-      }
-    });
-    
-    return unsubscribe;
-  }, [scrollYProgress, entryStart, staticStart, exitStart, exitEnd, audioEnabled])
+    let tabVisible = document.visibilityState === 'visible'
 
-  // Initialize video when component mounts
-  useEffect(() => {
-    const initializeVideo = () => {
-      if (videoRef.current) {
-        const video = videoRef.current;
-        // Ensure video starts muted and with proper settings
-        video.muted = true;
-        video.volume = 0.8;
-        video.loop = true;
-        video.setAttribute('loop', 'loop'); // Force loop attribute
-        video.playsInline = true;
-        
-        // Try to play muted video
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Autoplay might be blocked, that's okay
-          });
+    const playbackStartFor = (latest: number) => {
+      // Lock the resting progress once layout has published a real value.
+      // A later visit that is already inside the showreel still starts at entryStart.
+      if (playbackStartRef.current === null && latest > 0) {
+        playbackStartRef.current = Math.min(entryStart, latest + 0.02)
+      }
+      return playbackStartRef.current ?? entryStart
+    }
+
+    const apply = (latest: number) => {
+      const video = videoRef.current
+      if (!video) return
+
+      const viewportAllows = latest >= playbackStartFor(latest) && latest < exitEnd
+      const shouldPlay = viewportAllows && tabVisible
+      wantsPlaybackRef.current = shouldPlay
+
+      if (!shouldPlay) {
+        if (!video.paused) video.pause()
+        if (!video.muted) video.muted = true
+        return
+      }
+
+      video.loop = true
+      video.playsInline = true
+      if (audioEnabled) {
+        let volume = 0.8
+        if (latest >= entryStart && latest < staticStart) {
+          const progress = (latest - entryStart) / (staticStart - entryStart)
+          volume = 0.8 * progress
+        } else if (latest >= staticStart && latest < exitStart) {
+          volume = 0.8
+        } else if (latest >= exitStart) {
+          const progress = (latest - exitStart) / (exitEnd - exitStart)
+          volume = 0.8 * (1 - progress)
         }
+        video.muted = false
+        video.volume = volume
+        setIsMuted((current) => (current ? false : current))
+      } else {
+        video.muted = true
+        video.volume = 0.8
+        setIsMuted((current) => (current ? current : true))
+      }
+
+      if (video.paused) {
+        const playPromise = video.play()
+        if (playPromise !== undefined) playPromise.catch(() => {})
       }
     }
 
-    // Try to initialize immediately
-    initializeVideo()
-    
-    // Also try after a short delay to handle loading issues
-    const timeoutId = setTimeout(initializeVideo, 1000)
-    
-    return () => clearTimeout(timeoutId)
-  }, [])
+    const unsubscribe = scrollYProgress.on('change', apply)
+    apply(scrollYProgress.get())
+
+    const onVisibility = () => {
+      tabVisible = document.visibilityState === 'visible'
+      apply(scrollYProgress.get())
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      unsubscribe()
+      document.removeEventListener('visibilitychange', onVisibility)
+      wantsPlaybackRef.current = false
+    }
+  }, [scrollYProgress, entryStart, staticStart, exitStart, exitEnd, audioEnabled])
 
   // AGGRESSIVE LOOP MONITORING - ensures video always loops
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    let resumeTimer = 0
+    const safePlay = () => {
+      if (!wantsPlaybackRef.current) return
+      const playPromise = video.play()
+      if (playPromise !== undefined) playPromise.catch(() => {})
+    }
+
     const handleTimeUpdate = () => {
+      if (!wantsPlaybackRef.current) return
       // When video is near the end, restart it
       if (video.duration > 0 && video.currentTime >= video.duration - 0.5) {
         video.currentTime = 0;
-        video.play().catch(() => {});
+        safePlay()
       }
     };
 
     const handleEnded = () => {
+      if (!wantsPlaybackRef.current) return
       // Backup: manually restart if loop somehow fails
       video.loop = true;
       video.setAttribute('loop', 'loop');
       video.currentTime = 0;
-      video.play().catch(() => {});
+      safePlay()
     };
 
     const handlePause = () => {
-      // If video pauses unexpectedly and we're in the viewing area, restart it
-      const progress = scrollYProgress.get();
-      const isInViewingArea = progress >= entryStart && progress < exitEnd;
-      
-      if (isInViewingArea && video.currentTime > 0 && video.currentTime < video.duration) {
-        setTimeout(() => {
-          if (video.paused) {
-            video.play().catch(() => {});
-          }
+      // If video pauses unexpectedly while it should be playing, restart it
+      if (!wantsPlaybackRef.current) return
+      if (video.currentTime > 0 && video.currentTime < video.duration) {
+        window.clearTimeout(resumeTimer)
+        resumeTimer = window.setTimeout(() => {
+          if (wantsPlaybackRef.current && video.paused) safePlay()
         }, 100);
       }
     };
@@ -255,6 +256,7 @@ export default function Showreel() {
     video.addEventListener('pause', handlePause);
 
     return () => {
+      window.clearTimeout(resumeTimer)
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('pause', handlePause);
@@ -337,11 +339,10 @@ export default function Showreel() {
             <video
               ref={videoRef}
               className={`w-full h-full ${isMobile ? 'object-contain' : 'object-cover'}`}
-              autoPlay
               loop
               muted={isMuted}
               playsInline
-              preload="auto"
+              preload="metadata"
               webkit-playsinline="true"
               x5-playsinline="true"
               src={isMobile ? "/videos/theonlyrosh-showreel 9-16.mp4" : "/videos/theonlyrosh-showreel-fixed.mp4"}

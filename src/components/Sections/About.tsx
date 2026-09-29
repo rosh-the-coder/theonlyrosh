@@ -55,6 +55,54 @@ export default function About() {
       videoElementRef.current.volume = 1.0 // Set volume to maximum
     }
   }, [isClient])
+
+  // Start muted playback as the section approaches. Pause when it is well
+  // outside the viewport or the tab is hidden. Do not touch the mute choice.
+  useEffect(() => {
+    const root = containerRef.current
+    const video = videoElementRef.current
+    if (!root || !video) return
+
+    let viewportAllows = false
+    let tabVisible = document.visibilityState === 'visible'
+    let active = false
+
+    const apply = () => {
+      const current = videoElementRef.current
+      if (!current) return
+      if (viewportAllows && tabVisible) {
+        if (current.paused) {
+          const playPromise = current.play()
+          if (playPromise !== undefined) playPromise.catch(() => {})
+        }
+        return
+      }
+      if (!current.paused) current.pause()
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      if (!active && entry.isIntersecting) active = true
+      else if (active && !entry.isIntersecting) active = false
+      viewportAllows = active
+      apply()
+    }, { root: null, rootMargin: '70% 0px', threshold: 0 })
+
+    observer.observe(root)
+
+    const onVisibility = () => {
+      tabVisible = document.visibilityState === 'visible'
+      apply()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+      if (!video.paused) video.pause()
+    }
+  }, [])
   
   // Toggle audio on click
   const toggleAudio = (e: React.MouseEvent) => {
@@ -141,10 +189,10 @@ export default function About() {
               <video
                 ref={videoElementRef}
                 src="/videos/POV.mp4"
-                autoPlay
                 loop
-                muted
+                muted={isMuted}
                 playsInline
+                preload="metadata"
                 className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                 onLoadedMetadata={(e) => {
                   const video = e.currentTarget

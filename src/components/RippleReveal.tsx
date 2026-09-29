@@ -333,10 +333,12 @@ export default function RippleReveal(p: Props) {
       // Clear trail on new interaction
       trail.current = [{ x: uv.x, y: uv.y, time: Date.now() }];
     };
+    let releaseTimer = 0;
     const up = () => {
       pointer.current.down = false;
       // Keep trail for a moment after release
-      setTimeout(() => {
+      window.clearTimeout(releaseTimer);
+      releaseTimer = window.setTimeout(() => {
         trail.current = [];
       }, 200);
     };
@@ -380,6 +382,7 @@ export default function RippleReveal(p: Props) {
     window.addEventListener("pointermove", move);
     el.style.touchAction = "none";
     return () => {
+      window.clearTimeout(releaseTimer);
       el.removeEventListener("pointerdown", down);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointermove", move);
@@ -460,15 +463,17 @@ export default function RippleReveal(p: Props) {
     const lifetime = p.waterRippleLifetime || 1500;
     waterRipples.current = waterRipples.current.filter(ripple => currentTime - ripple.time < lifetime);
     
-    // Convert water ripples to array for shader
-    const rippleArray = new Float32Array(80);
+    // Reuse the uniform buffer. The shader stops at uWaterRippleCount.
+    const rippleArray = compU.current.uWaterRipples.value as Float32Array;
+    rippleArray.fill(0);
     let rippleCount = 0;
     waterRipples.current.forEach((ripple, index) => {
       if (index < 20) {
-        rippleArray[index * 4] = ripple.x;
-        rippleArray[index * 4 + 1] = ripple.y;
-        rippleArray[index * 4 + 2] = (currentTime - ripple.time) / lifetime; // normalized age
-        rippleArray[index * 4 + 3] = ripple.strength;
+        const offset = index * 4;
+        rippleArray[offset] = ripple.x;
+        rippleArray[offset + 1] = ripple.y;
+        rippleArray[offset + 2] = (currentTime - ripple.time) / lifetime; // normalized age
+        rippleArray[offset + 3] = ripple.strength;
         rippleCount++;
       }
     });
@@ -478,7 +483,6 @@ export default function RippleReveal(p: Props) {
     compU.current.uHasImage.value = tex ? 1 : 0;
     compU.current.uHasText.value = textTex ? 1 : 0;
     compU.current.uRevealEnabled.value = p.revealEnabled !== false ? 1 : 0;
-    compU.current.uWaterRipples.value = rippleArray;
     compU.current.uWaterRippleCount.value = rippleCount;
     compU.current.uTime.value += dt;
     (quad.material as any) = compMat;
