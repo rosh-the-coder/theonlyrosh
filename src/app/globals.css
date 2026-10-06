@@ -1221,3 +1221,183 @@ html {
   overflow-y: auto;
   scroll-behavior: auto;
 }
+
+@keyframes rvv-evidence-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rvv-evidence-drawer {
+  transform: translateY(100%);
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rvv-evidence-drawer.is-open {
+  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  .rvv-evidence-drawer {
+    transform: translateX(100%);
+  }
+
+  .rvv-evidence-drawer.is-open {
+    transform: translateX(0);
+  }
+}
+
+.rvv-evidence-backdrop {
+  opacity: 0;
+  transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rvv-evidence-backdrop.is-open {
+  opacity: 1;
+}
+
+.rvv-evidence-open .rvv-evidence-piece {
+  animation: rvv-evidence-rise 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rvv-evidence-content > * > * {
+  animation: rvv-evidence-rise 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rvv-evidence-content > * > *:nth-child(1) { animation-delay: 70ms; }
+.rvv-evidence-content > * > *:nth-child(2) { animation-delay: 130ms; }
+.rvv-evidence-content > * > *:nth-child(3) { animation-delay: 190ms; }
+.rvv-evidence-content > * > *:nth-child(4) { animation-delay: 250ms; }
+.rvv-evidence-content > * > *:nth-child(5) { animation-delay: 310ms; }
+.rvv-evidence-content > * > *:nth-child(6) { animation-delay: 370ms; }
+.rvv-evidence-content > * > *:nth-child(7) { animation-delay: 430ms; }
+.rvv-evidence-content > * > *:nth-child(8) { animation-delay: 490ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rvv-evidence-drawer,
+  .rvv-evidence-backdrop {
+    transition: none;
+  }
+
+  .rvv-evidence-open .rvv-evidence-piece,
+  .rvv-evidence-content > * > * {
+    animation: none;
+  }
+}
+
+.rvv-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rvv-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rvv-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+.rvv-hero-vignette {
+  background: linear-gradient(
+    90deg,
+    #0f0f0f 0%,
+    rgba(15, 15, 15, 0.9) 12%,
+    rgba(15, 15, 15, 0.22) 42%,
+    rgba(15, 15, 15, 0.22) 58%,
+    rgba(15, 15, 15, 0.9) 88%,
+    #0f0f0f 100%
+  );
+}
+
+.rvv-graph {
+  container-type: inline-size;
+}
+
+.rvv-visitor-grid,
+.rvv-creator-grid,
+.rvv-ia-grid {
+  display: grid;
+  gap: 1.75rem 2.25rem;
+}
+
+.rvv-visitor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rvv-span-2 {
+  grid-column: span 2;
+}
+
+.rvv-creator-grid,
+.rvv-ia-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rvv-ia-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rvv-ia-grid {
+  margin-top: 2rem;
+}
+
+@container (min-width: 560px) {
+  .rvv-ia-top {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .rvv-ia-utilities {
+    width: 14rem;
+    flex: none;
+  }
+
+  .rvv-ia-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 800px) {
+  .rvv-visitor-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .rvv-visitor-grid .rvv-n-landing { grid-column: 1; grid-row: 2; }
+  .rvv-visitor-grid .rvv-n-signup { grid-column: 2; grid-row: 1; }
+  .rvv-visitor-grid .rvv-n-login { grid-column: 2; grid-row: 3; }
+  .rvv-visitor-grid .rvv-n-verify { grid-column: 3; grid-row: 1; }
+  .rvv-visitor-grid .rvv-n-onboarding { grid-column: 4; grid-row: 1; }
+  .rvv-visitor-grid .rvv-n-home { grid-column: 1; grid-row: 5; }
+  .rvv-visitor-grid .rvv-n-card { grid-column: 2; grid-row: 5; }
+  .rvv-visitor-grid .rvv-n-unity { grid-column: 3; grid-row: 5; }
+  .rvv-visitor-grid .rvv-n-detail { grid-column: 4; grid-row: 5; }
+  .rvv-visitor-grid .rvv-n-header { grid-column: 5; grid-row: 5; }
+  .rvv-visitor-grid .rvv-n-profile { grid-column: 6; grid-row: 5; }
+
+  .rvv-creator-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1rem 1.75rem;
+  }
+}
+
+@container (min-width: 1100px) {
+  .rvv-ia-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

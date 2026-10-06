@@ -68,8 +68,11 @@ export default function Work() {
   // Handle card click - only navigate if expanded
   const handleCardClick = (index: number) => {
     if (activePanel === index) {
-      // Card is expanded, navigate to project page
-      window.location.href = `/project/${workItems[index].id}`;
+      // Card is expanded, navigate to project page.
+      // RedVelvetVault opens the current case study. The older page remains at /project/1.
+      const item = workItems[index];
+      const href = item.id === 1 ? '/work/redvelvetvault' : `/project/${item.id}`;
+      window.location.href = href;
     } else {
       // Card is collapsed, just expand it
       setActivePanel(index);
