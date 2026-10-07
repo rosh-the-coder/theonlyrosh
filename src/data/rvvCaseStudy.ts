@@ -43,6 +43,7 @@ export const panelIds = [
   'survey',
   'competitors',
   'explorations',
+  'pivot',
   'testing',
   'ia',
   'design-system',
@@ -62,21 +63,21 @@ export const prototypeUrl =
 
 export const metrics = [
   {
-    figure: '93%',
-    label: 'said artwork interactions were clear',
-    support: '13 of 14 rated clarity 4–5/5',
+    figure: '13/14',
+    label: 'Artwork interactions rated clear',
+    support: '93% rated 4–5/5',
     filled: 13,
   },
   {
-    figure: '86%',
-    label: 'said they would use it again',
-    support: '12 of 14 answered Yes',
+    figure: '12/14',
+    label: 'Would use it again',
+    support: '86% answered Yes',
     filled: 12,
   },
   {
-    figure: '71%',
-    label: 'understood its purpose immediately',
-    support: '10 of 14 rated clarity 4–5/5',
+    figure: '10/14',
+    label: 'Purpose understood immediately',
+    support: '71% rated 4–5/5',
     filled: 10,
   },
 ] as const;
@@ -120,13 +121,14 @@ export const iaBranches = [
 ] as const;
 
 export const panelMeta: Record<PanelId, { title: string; width: string }> = {
-  survey: { title: 'What 14 people said after trying it', width: 'md:w-[min(560px,100%)]' },
-  competitors: { title: 'What I learned from other art platforms', width: 'md:w-[min(960px,100%)]' },
-  explorations: { title: 'Why I moved from phone to desktop', width: 'md:w-[min(760px,100%)]' },
-  testing: { title: 'What changed when people tried it', width: 'md:w-[min(760px,100%)]' },
-  ia: { title: 'How the app is organised', width: 'md:w-[min(880px,100%)]' },
-  'design-system': { title: 'Why it looks this way', width: 'md:w-[min(720px,100%)]' },
-  scope: { title: 'What I built, what I learned, what is still open', width: 'md:w-[min(880px,100%)]' },
+  survey: { title: 'What 14 people said after trying the MVP', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  competitors: { title: 'Research context', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  explorations: { title: 'Early research', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  pivot: { title: 'The platform pivot', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  testing: { title: 'Testing notes', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  ia: { title: 'Full information architecture', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  'design-system': { title: 'Design-system decisions', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  scope: { title: 'What is still open', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
 };
 
 /** Visible trigger copy → panel. No in-panel links are specified in the current Figma prototype. */

@@ -171,7 +171,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
     ? 'fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6'
     : expanded
       ? 'fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-10'
-      : 'fixed bottom-4 right-4 z-40 w-[min(280px,calc(100vw-1.5rem))] sm:bottom-6 sm:right-6 sm:w-[340px]';
+      : 'fixed bottom-4 right-4 z-40 w-[200px] sm:bottom-6 sm:right-6 sm:w-[340px]';
 
   const progress = duration > 0 ? Math.min(1, current / duration) : 0;
 

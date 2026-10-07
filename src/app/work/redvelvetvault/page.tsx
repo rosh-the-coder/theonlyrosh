@@ -3,7 +3,7 @@ import CaseStudy from '@/components/rvv/CaseStudy';
 
 export const metadata: Metadata = {
   title: 'RedVelvetVault — Case study',
-  description: 'A tested desktop prototype for finding art, then walking into the gallery.',
+  description: 'A browser-based art platform where familiar web discovery leads into walkable 3D galleries.',
 };
 
 export default function RedVelvetVaultCaseStudyPage() {
