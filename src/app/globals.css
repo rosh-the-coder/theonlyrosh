@@ -15,8 +15,8 @@
 
 html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  max-width: 100%;
+  overflow-x: clip;
   background: #000000;
   color: #ffffff;
   font-family: 'Inter', sans-serif;
@@ -1278,18 +1278,6 @@ html {
 .rvv-evidence-content > * > *:nth-child(7) { animation-delay: 430ms; }
 .rvv-evidence-content > * > *:nth-child(8) { animation-delay: 490ms; }
 
-@media (prefers-reduced-motion: reduce) {
-  .rvv-evidence-drawer,
-  .rvv-evidence-backdrop {
-    transition: none;
-  }
-
-  .rvv-evidence-open .rvv-evidence-piece,
-  .rvv-evidence-content > * > * {
-    animation: none;
-  }
-}
-
 .rvv-reveal {
   opacity: 0;
   transform: translateY(18px);
@@ -1301,14 +1289,6 @@ html {
 .rvv-reveal.is-in {
   opacity: 1;
   transform: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rvv-reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
 }
 
 .rvv-hero-vignette {

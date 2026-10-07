@@ -13,44 +13,76 @@ export default function Work() {
 
   const workItems = [
     {
-      id: 1,
-      title: "REDVELVETVAULT",
-      subtitle: "GAMIFIED PRODUCT",
-      year: "2024-Current",
-      image: "/Work/RVV/rvv-cover.png",
-      tickerText: "UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY • UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY"
+      id: 'careeros',
+      title: 'CAREEROS',
+      subtitle: 'AI PRODUCT / DESIGN ENGINEERING',
+      year: 'JULY 2026',
+      image: '/Work/CareerOS/careerOS_hero.png',
+      imagePosition: 'left center',
+      href: '/work/careeros',
+      video: '',
+      hiddenOnMobile: false,
+      tickerText: 'PRODUCT DESIGN • UX/UI • AI PRODUCT • DESIGN ENGINEERING • NEXT.JS • LLM WORKFLOWS • PRODUCT DESIGN • UX/UI • AI PRODUCT • DESIGN ENGINEERING • NEXT.JS • LLM WORKFLOWS'
     },
     {
-      id: 2,
-      title: "POWERSTRIDE",
-      subtitle: "SUSTAINABLE APP",
-      year: "2024",
-      image: "/Work/PowerStride/Power-stride-Cover.png",
-      tickerText: "UX RESEARCH • UI REDESIGN • SUSTAINABLE DESIGN • QUANTITATIVE RESEARCH • SCIENCE & INNOVATION • ENERGY AWARENESS • SMART MOBILITY • TRANSIT INNOVATION • PIEZOELECTRIC TECHNOLOGY • ECO-INCENTIVES • MOBILE APP REDESIGN • UX RESEARCH • UI REDESIGN • SUSTAINABLE DESIGN • QUANTITATIVE RESEARCH • SCIENCE & INNOVATION • ENERGY AWARENESS • SMART MOBILITY • TRANSIT INNOVATION • PIEZOELECTRIC TECHNOLOGY • ECO-INCENTIVES • MOBILE APP REDESIGN"
+      id: 'redvelvetvault',
+      title: 'REDVELVETVAULT',
+      subtitle: 'GAMIFIED PRODUCT',
+      year: '2024-Current',
+      image: '/Work/RVV/rvv-cover.png',
+      imagePosition: 'center',
+      href: '/work/redvelvetvault',
+      video: '/Work/RVV/Showreel-Grid-Mobile.mp4',
+      hiddenOnMobile: false,
+      tickerText: 'UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY • UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY'
     },
     {
-      id: 3,
-      title: "THEFILMMAKERARCHITECT.COM",
-      subtitle: "CLIENT",
-      year: "2025",
-      image: "/Work/TFA/TFA-COVER.png",
-      tickerText: "FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING • FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING"
+      id: 'powerstride',
+      title: 'POWERSTRIDE',
+      subtitle: 'SUSTAINABLE APP',
+      year: '2024',
+      image: '/Work/PowerStride/Power-stride-Cover.png',
+      imagePosition: 'center',
+      href: '/project/2',
+      video: '/Work/PowerStride/Showreel_-Mobile-screens.mp4',
+      hiddenOnMobile: false,
+      tickerText: 'UX RESEARCH • UI REDESIGN • SUSTAINABLE DESIGN • QUANTITATIVE RESEARCH • SCIENCE & INNOVATION • ENERGY AWARENESS • SMART MOBILITY • TRANSIT INNOVATION • PIEZOELECTRIC TECHNOLOGY • ECO-INCENTIVES • MOBILE APP REDESIGN • UX RESEARCH • UI REDESIGN • SUSTAINABLE DESIGN • QUANTITATIVE RESEARCH • SCIENCE & INNOVATION • ENERGY AWARENESS • SMART MOBILITY • TRANSIT INNOVATION • PIEZOELECTRIC TECHNOLOGY • ECO-INCENTIVES • MOBILE APP REDESIGN'
     },
     {
-      id: 4,
-      title: "COMING SOON",
-      subtitle: "UI/UX",
-      year: "2024",
-      image: "/Work/soon/pexels-alleksana-4271927.jpg",
-      tickerText: "VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS"
+      id: 'tfa',
+      title: 'THEFILMMAKERARCHITECT.COM',
+      subtitle: 'CLIENT',
+      year: '2025',
+      image: '/Work/TFA/TFA-COVER.png',
+      imagePosition: 'center',
+      href: '/project/3',
+      video: '/Work/TFA/TFA.mp4',
+      hiddenOnMobile: false,
+      tickerText: 'FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING • FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING'
     },
     {
-      id: 5,
-      title: "COMING SOON",
-      subtitle: "UI/UX",
-      year: "2024",
-      image: "/Work/soon/pexels-vie-studio-4439444.jpg",
-      tickerText: "VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS"
+      id: 'soon-1',
+      title: 'COMING SOON',
+      subtitle: 'UI/UX',
+      year: '2024',
+      image: '/Work/soon/pexels-alleksana-4271927.jpg',
+      imagePosition: 'center',
+      href: '/project/4',
+      video: '',
+      hiddenOnMobile: true,
+      tickerText: 'VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS'
+    },
+    {
+      id: 'soon-2',
+      title: 'COMING SOON',
+      subtitle: 'UI/UX',
+      year: '2024',
+      image: '/Work/soon/pexels-vie-studio-4439444.jpg',
+      imagePosition: 'center',
+      href: '/project/5',
+      video: '',
+      hiddenOnMobile: true,
+      tickerText: 'VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS'
     }
   ];
 
@@ -70,9 +102,7 @@ export default function Work() {
     if (activePanel === index) {
       // Card is expanded, navigate to project page.
       // RedVelvetVault opens the current case study. The older page remains at /project/1.
-      const item = workItems[index];
-      const href = item.id === 1 ? '/work/redvelvetvault' : `/project/${item.id}`;
-      window.location.href = href;
+      window.location.href = workItems[index].href;
     } else {
       // Card is collapsed, just expand it
       setActivePanel(index);
@@ -143,22 +173,28 @@ export default function Work() {
         {/* Expanding Cards Container */}
         <div ref={containerRef} className="flex flex-col md:flex-row w-full gap-3 md:gap-4 px-1 -mt-[60px] sm:-mt-[100px] md:-mt-[150px]" style={{ position: 'relative', zIndex: 2 }}>
           {workItems.map((item, index) => {
-            // Hide cards 4 and 5 (index 3 and 4) on mobile
-            const isHiddenOnMobile = index >= 3;
-            
             return (
               <div
                 key={item.id}
-                className={`panel ${activePanel === index ? 'active' : ''} ${hoveredPanel === index ? 'hovered' : ''} ${isHiddenOnMobile ? 'hidden md:block' : ''}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`${item.title}. ${activePanel === index ? 'Open case study' : 'Expand project'}`}
+                className={`panel ${activePanel === index ? 'active' : ''} ${hoveredPanel === index ? 'hovered' : ''} ${item.hiddenOnMobile ? 'hidden md:block' : ''}`}
                 style={{
                   position: 'relative',
                   zIndex: 3,
-                  cursor: activePanel === index ? 'pointer' : 'pointer'
+                  cursor: 'pointer'
                 }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   handleCardClick(index);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCardClick(index);
+                  }
                 }}
                 onMouseEnter={() => {
                   if (activePanel === index) {
@@ -175,22 +211,20 @@ export default function Work() {
                 style={{
                   backgroundImage: `url(${item.image})`,
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  backgroundPosition: item.imagePosition,
                   backgroundRepeat: 'no-repeat',
                   zIndex: 0
                 }}
               />
 
-              {/* Dim overlay on hover (below placeholder, above bg) */}
-              {hoveredPanel === index && activePanel === index && (
+              {item.video && hoveredPanel === index && activePanel === index && (
                 <div className="absolute inset-0 rounded-[16px] bg-black/30" style={{ zIndex: 1 }} />
               )}
-              {/* Video player - only visible on hover when expanded */}
+              {item.video && (
               <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ${
                 hoveredPanel === index && activePanel === index ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
               }`} style={{ zIndex: 2 }}>
                 <div className="w-[80%] aspect-video rounded-lg border border-white/30 shadow-[0_10px_25px_rgba(0,0,0,0.45)] overflow-hidden">
-                  {/* Only load video when hovered to save bandwidth and performance */}
                   {hoveredPanel === index && activePanel === index && (
                     <video
                       className="w-full h-full object-cover"
@@ -200,11 +234,12 @@ export default function Work() {
                       playsInline
                       preload="metadata"
                     >
-                      <source src={index === 0 ? "/Work/RVV/Showreel-Grid-Mobile.mp4" : index === 1 ? "/Work/PowerStride/Showreel_-Mobile-screens.mp4" : index === 2 ? "/Work/TFA/TFA.mp4" : ""} type="video/mp4" />
+                      <source src={item.video} type="video/mp4" />
                     </video>
                   )}
                 </div>
               </div>
+              )}
 
               {/* Expanded state - detailed layout */}
               <div className={`absolute bottom-0 left-0 right-0 transition-opacity duration-500 ${
@@ -237,6 +272,11 @@ export default function Work() {
       </div>
 
       <style jsx>{`
+        .panel:focus-visible {
+          outline: 2px solid rgba(255, 255, 255, 0.85);
+          outline-offset: 3px;
+        }
+
         .panel {
           background-size: cover;
           background-position: center;
