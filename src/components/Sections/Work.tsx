@@ -13,18 +13,6 @@ export default function Work() {
 
   const workItems = [
     {
-      id: 'careeros',
-      title: 'CAREEROS',
-      subtitle: 'AI PRODUCT / DESIGN ENGINEERING',
-      year: 'JULY 2026',
-      image: '/Work/CareerOS/careerOS_hero.png',
-      imagePosition: 'left center',
-      href: '/work/careeros',
-      video: '',
-      hiddenOnMobile: false,
-      tickerText: 'PRODUCT DESIGN • UX/UI • AI PRODUCT • DESIGN ENGINEERING • NEXT.JS • LLM WORKFLOWS • PRODUCT DESIGN • UX/UI • AI PRODUCT • DESIGN ENGINEERING • NEXT.JS • LLM WORKFLOWS'
-    },
-    {
       id: 'redvelvetvault',
       title: 'REDVELVETVAULT',
       subtitle: 'GAMIFIED PRODUCT',
@@ -35,6 +23,30 @@ export default function Work() {
       video: '/Work/RVV/Showreel-Grid-Mobile.mp4',
       hiddenOnMobile: false,
       tickerText: 'UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY • UX • UI • UNITY 3D DEVELOPMENT • FIREBASE INTEGRATION • GAMIFIED PLATFORMS • E-COMMERCE DESIGN • HYBRID APP DEVELOPMENT • SOCIAL MEDIA • INFORMATION ARCHITECTURE • USER RESEARCH & TESTING • INTERACTION DESIGN • 3D ENVIRONMENT DESIGN • DIGITAL PRODUCT STRATEGY'
+    },
+    {
+      id: 'flyh',
+      title: 'FLYH',
+      subtitle: 'PRODUCT DESIGN',
+      year: '2026',
+      image: '',
+      imagePosition: 'center',
+      href: '',
+      video: '',
+      hiddenOnMobile: false,
+      tickerText: 'PRODUCT DESIGN • CREATOR WORKFLOW • LISTING STUDIO • PRODUCT DESIGN • CREATOR WORKFLOW • LISTING STUDIO'
+    },
+    {
+      id: 'careeros',
+      title: 'CAREEROS',
+      subtitle: 'AI PRODUCT / DESIGN ENGINEERING',
+      year: 'JULY 2026',
+      image: '/Work/CareerOS/cover.png',
+      imagePosition: 'center',
+      href: '/work/careeros',
+      video: '/Work/CareerOS/SceneF.mp4',
+      hiddenOnMobile: false,
+      tickerText: 'PRODUCT DESIGN • UX/UI • AI PRODUCT • DESIGN ENGINEERING • LLM WORKFLOWS • JOB MATCHING • EXPLAINABLE SCORING • CV AUTOMATION • APPLICATION TRACKING • PRODUCT DESIGN • UX/UI • AI PRODUCT • DESIGN ENGINEERING • LLM WORKFLOWS • JOB MATCHING • EXPLAINABLE SCORING • CV AUTOMATION • APPLICATION TRACKING'
     },
     {
       id: 'powerstride',
@@ -99,9 +111,9 @@ export default function Work() {
 
   // Handle card click - only navigate if expanded
   const handleCardClick = (index: number) => {
-    if (activePanel === index) {
+    if (activePanel === index && workItems[index].href) {
       // Card is expanded, navigate to project page.
-      // RedVelvetVault opens the current case study. The older page remains at /project/1.
+      // RedVelvetVault opens the current case study at /work/redvelvetvault.
       window.location.href = workItems[index].href;
     } else {
       // Card is collapsed, just expand it
@@ -209,7 +221,8 @@ export default function Work() {
               <div
                 className={`panel-bg absolute inset-0 rounded-[16px]`}
                 style={{
-                  backgroundImage: `url(${item.image})`,
+                  backgroundImage: item.image ? `url(${item.image})` : undefined,
+                  backgroundColor: '#141414',
                   backgroundSize: 'cover',
                   backgroundPosition: item.imagePosition,
                   backgroundRepeat: 'no-repeat',
