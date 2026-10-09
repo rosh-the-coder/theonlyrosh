@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { forwardRef, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -23,6 +24,11 @@ const defaultChapters = [
 
 type WalkthroughChapter = { title: string; start: number };
 
+export type PlayerHandle = {
+  seek: (seconds: number) => void;
+  play: () => void;
+};
+
 function chapterAt(time: number, chapters: readonly WalkthroughChapter[]) {
   let match = chapters[0];
   for (const chapter of chapters) {
@@ -39,22 +45,9 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
-export default function WalkthroughPlayer({
-  src,
-  hidden,
-  title = 'Walkthrough',
-  accent = '#FF4B4B',
-  chapters = defaultChapters,
-  closeLabel = 'Minimize walkthrough',
-  openLabel = 'Open walkthrough',
-  resumeWhenShown = true,
-  playRequest = 0,
-  openExpanded = false,
-  onDismiss,
-  animate = false,
-}: {
+const WalkthroughPlayer = forwardRef<PlayerHandle, {
   src: string;
-  hidden: boolean;
+  hidden?: boolean;
   title?: string;
   accent?: string;
   chapters?: readonly WalkthroughChapter[];
@@ -65,8 +58,28 @@ export default function WalkthroughPlayer({
   openExpanded?: boolean;
   onDismiss?: () => void;
   animate?: boolean;
-}) {
+  variant?: 'dock' | 'inline';
+  reportHref?: string;
+}>(function WalkthroughPlayer({
+  src,
+  hidden = false,
+  title = 'Walkthrough',
+  accent = '#FF4B4B',
+  chapters = defaultChapters,
+  closeLabel = 'Minimize walkthrough',
+  openLabel = 'Open walkthrough',
+  resumeWhenShown = true,
+  playRequest = 0,
+  openExpanded = false,
+  onDismiss,
+  animate = false,
+  variant = 'dock',
+  reportHref,
+}, ref) {
+  const inline = variant === 'inline';
   const videoRef = useRef<HTMLVideoElement>(null);
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusOnMinimize = useRef(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const playedRequest = useRef(0);
   const hiddenRef = useRef(hidden);
@@ -88,6 +101,17 @@ export default function WalkthroughPlayer({
   const [rate, setRate] = useState(1);
   const [rateOpen, setRateOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
+
+  useEffect(() => {
+    if (inline || !reportHref) return;
+    const media = window.matchMedia('(max-width: 639px)');
+    const apply = () => {
+      if (media.matches) setMinimized(true);
+    };
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, [inline, reportHref]);
   const scrubbing = useRef(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ ratio: number; time: number } | null>(null);
@@ -220,14 +244,53 @@ export default function WalkthroughPlayer({
     }
   }
 
-  const shell = minimized
-    ? 'fixed bottom-4 right-4 z-40 sm:bottom-6 sm:right-6'
-    : expanded
-      ? 'fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-10'
-      : 'fixed bottom-4 right-4 z-40 w-[200px] sm:bottom-6 sm:right-6 sm:w-[340px]';
+  const shell = inline
+    ? 'relative w-full'
+    : minimized
+      ? 'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 sm:bottom-6 sm:right-6'
+      : expanded
+        ? 'fixed inset-0 z-40 flex items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-10'
+        : 'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 w-max max-w-[calc(100vw-2rem)] sm:bottom-6 sm:right-6';
 
   const progress = duration > 0 ? Math.min(1, current / duration) : 0;
-  const chapter = chapters.length > 0 ? chapterAt(current, chapters) : null;
+  const showChapters = chapters.length > 0 && (inline || expanded);
+  const chapter = showChapters ? chapterAt(current, chapters) : null;
+
+  useEffect(() => {
+    if (!minimized || !returnFocusOnMinimize.current) return;
+    returnFocusOnMinimize.current = false;
+    openButtonRef.current?.focus();
+  }, [minimized]);
+
+  useImperativeHandle(ref, () => ({
+    seek: (seconds: number) => {
+      const video = videoRef.current;
+      if (!video) return;
+      const time = Number.isFinite(video.duration) && video.duration > 0
+        ? Math.min(video.duration, Math.max(0, seconds))
+        : Math.max(0, seconds);
+      video.currentTime = time;
+      setCurrent(time);
+    },
+    play: () => {
+      videoRef.current?.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    },
+  }));
+
+  const reportLink = !inline && reportHref ? (
+    <motion.a
+      layout="position"
+      transition={{ layout: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+      href={reportHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Read the full report. Opens the report folder in a new tab."
+      className="inline-flex min-h-11 items-center rounded-full bg-black/55 px-3 text-sm font-medium text-white backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+    >
+      <span className="max-[380px]:hidden">Read the full report ↗</span>
+      <span className="hidden max-[380px]:inline">Full report ↗</span>
+    </motion.a>
+  ) : null;
 
   return (
     <div
@@ -235,30 +298,35 @@ export default function WalkthroughPlayer({
       className={`${shell} ${animate && !hidden ? 'walkthrough-player-in' : ''} motion-reduce:transition-none ${hidden ? 'pointer-events-none invisible' : ''}`}
       style={{ '--walkthrough-accent': accent } as CSSProperties}
     >
-      {minimized ? (
+      {!minimized && expanded && (
         <button
           type="button"
-          className="grid h-14 w-14 place-items-center rounded-full bg-[var(--walkthrough-accent)] text-white shadow-[0_16px_50px_rgba(0,0,0,0.45)]"
+          className="absolute inset-0 bg-[#0f0f0f]/55 backdrop-blur-md"
+          aria-label="Minimise walkthrough"
+          onClick={() => setExpanded(false)}
+        />
+      )}
+      <div
+        className={inline ? 'w-full' : minimized ? 'flex items-center gap-3' : `relative z-10 flex flex-col items-end gap-2 ${expanded ? 'w-[min(1100px,94vw)]' : ''}`}
+      >
+      {reportLink}
+      {minimized ? (
+        <button
+          ref={openButtonRef}
+          type="button"
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[var(--walkthrough-accent)] text-white shadow-[0_16px_50px_rgba(0,0,0,0.45)]"
           aria-label={openLabel}
           onClick={() => setMinimized(false)}
         >
           <Icon><path d="M8 5.5v13l11-6.5-11-6.5z" /></Icon>
         </button>
       ) : null}
-      {!minimized && expanded && (
-        <button
-          type="button"
-          className="absolute inset-0 bg-[#0f0f0f]/55 backdrop-blur-md"
-          aria-label="Shrink walkthrough"
-          onClick={() => setExpanded(false)}
-        />
-      )}
       <div
         role={expanded ? 'dialog' : 'region'}
         aria-modal={expanded || undefined}
         aria-labelledby={labelId}
         aria-hidden={hidden || minimized}
-        className={`${minimized ? 'hidden' : 'relative flex'} flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#111] shadow-[0_16px_50px_rgba(0,0,0,0.45)] ${expanded ? 'w-[min(1100px,94vw)]' : 'w-full'}`}
+        className={`${minimized ? 'hidden' : 'relative flex'} flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#111] shadow-[0_16px_50px_rgba(0,0,0,0.45)] ${expanded || inline ? 'w-full' : reportHref ? 'w-[min(calc(100vw-2rem),340px)]' : 'w-[200px] sm:w-[340px]'}`}
       >
         <div className="relative bg-black">
           <video
@@ -268,7 +336,7 @@ export default function WalkthroughPlayer({
             preload="metadata"
             className={`block w-full bg-black object-contain ${expanded ? 'max-h-[78vh]' : 'aspect-video cursor-pointer'}`}
             onClick={() => {
-              if (expanded) togglePlay();
+              if (inline || expanded) togglePlay();
               else setExpanded(true);
             }}
             onPlay={() => setPlaying(true)}
@@ -291,6 +359,7 @@ export default function WalkthroughPlayer({
               Playing in a picture-in-picture window
             </p>
           )}
+          {!inline && (
           <button
             type="button"
             className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-white"
@@ -301,11 +370,15 @@ export default function WalkthroughPlayer({
               setExpanded(false);
               setRateOpen(false);
               if (onDismiss) onDismiss();
-              else setMinimized(true);
+              else {
+                returnFocusOnMinimize.current = true;
+                setMinimized(true);
+              }
             }}
           >
             <Icon><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5z" /></Icon>
           </button>
+          )}
           {!playing && !inPip && (
             <button
               type="button"
@@ -368,7 +441,7 @@ export default function WalkthroughPlayer({
               seekFromClientX(event.clientX);
             }}
             onPointerMove={(event) => {
-              if (expanded && duration > 0 && chapters.length > 0) {
+              if (showChapters && duration > 0) {
                 const rect = event.currentTarget.getBoundingClientRect();
                 const ratio = rect.width <= 0 ? 0 : Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
                 setHover({ ratio, time: ratio * duration });
@@ -392,7 +465,7 @@ export default function WalkthroughPlayer({
               }
             }}
           >
-            {expanded && hover && chapters.length > 0 && (
+            {showChapters && hover && (
               <span
                 className="pointer-events-none absolute bottom-full z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/90 px-2 py-1 text-xs text-white"
                 style={{ left: `${hover.ratio * 100}%` }}
@@ -402,7 +475,7 @@ export default function WalkthroughPlayer({
               </span>
             )}
             <span className="relative h-1.5 w-full">
-              {expanded && duration > 0 && chapters.length > 0 ? (
+              {showChapters && duration > 0 ? (
                 chapters.map((chapter, index) => {
                   const end = chapters[index + 1]?.start ?? duration;
                   const span = Math.max(0, end - chapter.start) / duration;
@@ -426,7 +499,7 @@ export default function WalkthroughPlayer({
               <span className="absolute top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white" style={{ left: `calc(${progress * 100}% - 7px)` }} />
             </span>
           </div>
-          {expanded && chapter && (
+          {chapter && (
             <p className="px-1 text-[11px] font-medium tracking-wide text-white">{chapter.title}</p>
           )}
           <div className="mt-1 flex items-center gap-1">
@@ -450,7 +523,7 @@ export default function WalkthroughPlayer({
                 ? <Icon><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3 2.2-2.2-1.4-1.4L15.1 10.6l-2.2-2.2-1.4 1.4 2.2 2.2-2.2 2.2 1.4 1.4 2.2-2.2 2.2 2.2 1.4-1.4-2.2-2.2z" /></Icon>
                 : <Icon><path d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a3.5 3.5 0 0 0-2-3.1v6.2a3.5 3.5 0 0 0 2-3.1z" /></Icon>}
             </button>
-            {expanded && (
+            {(inline || expanded) && (
               <input
                 aria-label="Volume"
                 type="range"
@@ -475,14 +548,19 @@ export default function WalkthroughPlayer({
                 <Icon><path d="M3 5h18v14H3V5zm2 2v10h14V7H5zm6 2h6v4h-6V9z" /></Icon>
               </button>
             )}
-            <button type="button" onClick={() => setExpanded((value) => !value)} className="grid h-9 w-9 shrink-0 place-items-center text-white" aria-label={expanded ? 'Shrink walkthrough' : 'Enlarge walkthrough'}>
+            {!inline && (
+            <button type="button" onClick={() => setExpanded((value) => !value)} className="grid h-9 w-9 shrink-0 place-items-center text-white" aria-label={expanded ? 'Minimise walkthrough' : 'Expand walkthrough'}>
               {expanded
                 ? <Icon><path d="M9 4H4v5h2V6h3V4zm11 5V4h-5v2h3v3h2zM6 15H4v5h5v-2H6v-3zm12 3h-3v2h5v-5h-2v3z" /></Icon>
                 : <Icon><path d="M4 9V4h5v2H6v3H4zm10-5h5v5h-2V6h-3V4zM6 15v3h3v2H4v-5h2zm12 0h2v5h-5v-2h3v-3z" /></Icon>}
             </button>
+            )}
           </div>
         </div>
       </div>
+      </div>
     </div>
   );
-}
+});
+
+export default WalkthroughPlayer;

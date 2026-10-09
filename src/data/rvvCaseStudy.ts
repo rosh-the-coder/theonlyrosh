@@ -58,8 +58,9 @@ export const heroVideoUrl =
 export const walkthroughVideoUrl =
   'https://pub-14e70177217f4d5481f61d1335a55a75.r2.dev/rvv/redvelvetvault-walkthrough.mp4';
 
-export const prototypeUrl =
-  'https://www.figma.com/proto/IrRpfLUo6AThFUw8EH0AR7/RedVelvetVault?page-id=428%3A236&node-id=436-1167&viewport=534%2C168%2C0.08&t=0zoNS4UXreCVnlVd-1&scaling=min-zoom&content-scaling=fixed&starting-point-node-id=436%3A1167&show-proto-sidebar=1';
+export const showreelVideoUrl = '/Work/RVV/redvelvetvault-promo.mp4';
+
+export const prototypeUrl = 'https://redvelvetvault.web.app/';
 
 export const metrics = [
   {
@@ -121,13 +122,13 @@ export const iaBranches = [
 ] as const;
 
 export const panelMeta: Record<PanelId, { title: string; width: string }> = {
-  survey: { title: 'What 14 people said after trying the MVP', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  survey: { title: 'Final MVP survey', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
   competitors: { title: 'Research context', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
-  explorations: { title: 'Early research', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
-  pivot: { title: 'The platform pivot', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
-  testing: { title: 'Testing notes', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
-  ia: { title: 'Full information architecture', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
-  'design-system': { title: 'Design-system decisions', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  explorations: { title: 'How the early idea developed', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  pivot: { title: 'Why the main experience moved to desktop', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  testing: { title: 'What I observed and changed', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  ia: { title: 'Navigation map', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
+  'design-system': { title: 'Design decisions', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
   scope: { title: 'What is still open', width: 'md:w-[72vw] xl:w-[min(52vw,960px)]' },
 };
 

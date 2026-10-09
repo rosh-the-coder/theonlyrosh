@@ -1292,15 +1292,9 @@ html {
 }
 
 .rvv-hero-vignette {
-  background: linear-gradient(
-    90deg,
-    #0f0f0f 0%,
-    rgba(15, 15, 15, 0.9) 12%,
-    rgba(15, 15, 15, 0.22) 42%,
-    rgba(15, 15, 15, 0.22) 58%,
-    rgba(15, 15, 15, 0.9) 88%,
-    #0f0f0f 100%
-  );
+  background:
+    linear-gradient(180deg, rgba(15, 15, 15, 0.45) 0%, rgba(15, 15, 15, 0.12) 22%, rgba(15, 15, 15, 0) 46%, rgba(15, 15, 15, 0.35) 78%, #0f0f0f 100%),
+    linear-gradient(90deg, rgba(15, 15, 15, 0.92) 0%, rgba(15, 15, 15, 0.78) 24%, rgba(15, 15, 15, 0.28) 48%, rgba(15, 15, 15, 0.05) 72%);
 }
 
 .rvv-graph {

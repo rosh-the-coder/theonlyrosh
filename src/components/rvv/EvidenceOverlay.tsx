@@ -27,6 +27,7 @@ export default function EvidenceOverlay({
   onPresenceChange?: (present: boolean) => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   const openRef = useRef(false);
   const [current, setCurrent] = useState<PanelId | null>(panel);
@@ -61,6 +62,7 @@ export default function EvidenceOverlay({
 
   useEffect(() => {
     onPresenceRef.current?.(current !== null);
+    scrollerRef.current?.scrollTo(0, 0);
   }, [current]);
 
   useEffect(() => {
@@ -154,7 +156,7 @@ export default function EvidenceOverlay({
             <span className="sr-only">Close</span>
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div id="rvv-panel-scroll" ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
           <div key={current} className="rvv-evidence-content">
             <PanelBody id={current} />
           </div>
