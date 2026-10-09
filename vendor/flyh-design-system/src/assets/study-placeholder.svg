@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Artwork placeholder">
+  <rect width="800" height="1000" fill="#F2F1ED"/>
+  <rect x="80" y="80" width="640" height="840" fill="none" stroke="#CBD0CC" stroke-width="2"/>
+  <rect x="220" y="280" width="360" height="280" fill="#EFF7F3" stroke="#145C46" stroke-width="3"/>
+  <circle cx="400" cy="420" r="48" fill="#D66A4A"/>
+  <text x="400" y="680" text-anchor="middle" fill="#5E6862" font-family="Manrope, sans-serif" font-size="28">Artwork slot</text>
+  <text x="400" y="724" text-anchor="middle" fill="#858E88" font-family="Manrope, sans-serif" font-size="18">Original image excluded</text>
+</svg>

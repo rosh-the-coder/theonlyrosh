@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+@theme {
+  --color-shell: #111613;
+  --color-shell-surface: #181e1a;
+  --color-shell-selected: #222a25;
+  --color-shell-border: #29302c;
+  --color-shell-text: #f2f4f2;
+  --color-shell-muted: #949d97;
+
+  --color-canvas: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f2f1ed;
+  --color-border: #dfe2de;
+  --color-border-strong: #cbd0cc;
+
+  --color-text-primary: #1d2420;
+  --color-text-secondary: #5e6862;
+  --color-text-muted: #858e88;
+
+  --color-forest: #145c46;
+  --color-forest-hover: #104a39;
+  --color-green-soft: #dcede5;
+  --color-green-subtle: #eff7f3;
+  --color-terracotta: #d66a4a;
+  --color-destructive: #a33b31;
+  --color-destructive-hover: #892f27;
+  --color-validation: #9b3b31;
+
+  /* Semantic roles consumed by application components. */
+  --color-page: var(--color-canvas);
+  --color-surface-raised: var(--color-surface);
+  --color-surface-hover: var(--color-surface-subtle);
+  --color-text-inverse: var(--color-shell-text);
+  --color-border-subtle: var(--color-border);
+  --color-border-default: var(--color-border);
+  --color-border-interactive: var(--color-forest);
+  --color-action-primary: var(--color-forest);
+  --color-action-primary-hover: var(--color-forest-hover);
+  --color-action-primary-active: var(--color-forest-hover);
+  --color-action-primary-text: var(--color-shell-text);
+  --color-success: #2f6b4f;
+  --color-warning: #8a6517;
+  --color-danger: var(--color-destructive);
+  --color-info: #3e6375;
+  --color-neutral: var(--color-text-secondary);
+  --color-focus-ring: var(--color-green-soft);
+  --color-validation-ring: #eee1dc;
+
+  --color-status-draft: #6b7280;
+  --color-status-working: #3b6edb;
+  --color-status-needs-approval: #c88919;
+  --color-status-blocked: #c4473d;
+  --color-status-verified: #168477;
+  --color-status-ready: #24875a;
+
+  --font-sans: Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --spacing: 4px;
+
+  --radius-control: 6px;
+  --radius-surface: 8px;
+  --radius-card: 10px;
+  --radius-panel: 12px;
+  --shadow-operational: 0 1px 2px rgb(17 22 19 / 0.04);
+
+  --type-display-size: 32px;
+  --type-display-line-height: 1.2;
+  --type-page-size: 24px;
+  --type-page-line-height: 1.3;
+  --type-section-size: 16px;
+  --type-section-line-height: 20px;
+  --type-item-size: 14px;
+  --type-item-line-height: 20px;
+  --type-body-size: 13px;
+  --type-body-line-height: 19px;
+  --type-control-size: 13px;
+  --type-control-line-height: 18px;
+  --type-action-size: 13px;
+  --type-action-line-height: 18px;
+  --type-action-prominent-size: 14px;
+  --type-action-prominent-line-height: 20px;
+  --type-label-size: 12px;
+  --type-label-line-height: 16px;
+  --type-meta-size: 12px;
+  --type-meta-line-height: 16px;
+  --type-meta-dense-size: 11px;
+  --type-meta-dense-line-height: 14px;
+}
+
+@utility type-display {
+  font-size: var(--type-display-size);
+  font-weight: 600;
+  line-height: var(--type-display-line-height);
+}
+
+@utility type-page {
+  font-size: var(--type-page-size);
+  font-weight: 600;
+  line-height: var(--type-page-line-height);
+}
+
+@utility type-section {
+  font-size: var(--type-section-size);
+  font-weight: 600;
+  line-height: var(--type-section-line-height);
+}
+
+@utility type-item {
+  font-size: var(--type-item-size);
+  font-weight: 600;
+  line-height: var(--type-item-line-height);
+}
+
+@utility type-body {
+  font-size: var(--type-body-size);
+  font-weight: 400;
+  line-height: var(--type-body-line-height);
+}
+
+@utility type-control {
+  font-size: var(--type-control-size);
+  font-weight: 400;
+  line-height: var(--type-control-line-height);
+}
+
+@utility type-action {
+  font-size: var(--type-action-size);
+  font-weight: 500;
+  line-height: var(--type-action-line-height);
+}
+
+@utility type-action-prominent {
+  font-size: var(--type-action-prominent-size);
+  font-weight: 500;
+  line-height: var(--type-action-prominent-line-height);
+}
+
+@utility type-label {
+  font-size: var(--type-label-size);
+  font-weight: 500;
+  line-height: var(--type-label-line-height);
+}
+
+@utility type-meta {
+  font-size: var(--type-meta-size);
+  font-weight: 400;
+  line-height: var(--type-meta-line-height);
+}
+
+@utility type-meta-dense {
+  font-size: var(--type-meta-dense-size);
+  font-weight: 400;
+  line-height: var(--type-meta-dense-line-height);
+}
+
+@utility status-badge {
+  color: var(--color-text-primary);
+  background-color: color-mix(in srgb, var(--status-color) 8%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--status-color) 22%, var(--color-surface));
+}
+
+@utility status-badge-dot {
+  background-color: var(--status-color);
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background: var(--color-canvas);
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    background: var(--color-canvas);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  /* Retained for existing semantic captions and other assistive-only content. */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}

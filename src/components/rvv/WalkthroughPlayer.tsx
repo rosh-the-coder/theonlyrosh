@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -10,7 +10,7 @@ function formatTime(seconds: number) {
   return `${minutes}:${remain.toString().padStart(2, '0')}`;
 }
 
-const chapters = [
+const defaultChapters = [
   { title: 'INTRO', start: 0 },
   { title: 'ONBOARDING', start: 15 },
   { title: 'CORE', start: 50 },
@@ -21,8 +21,10 @@ const chapters = [
   { title: 'CONCLUSION', start: 5 * 60 },
 ] as const;
 
-function chapterAt(time: number) {
-  let match: (typeof chapters)[number] = chapters[0];
+type WalkthroughChapter = { title: string; start: number };
+
+function chapterAt(time: number, chapters: readonly WalkthroughChapter[]) {
+  let match = chapters[0];
   for (const chapter of chapters) {
     if (time >= chapter.start) match = chapter;
   }
@@ -37,8 +39,42 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
-export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden: boolean }) {
+export default function WalkthroughPlayer({
+  src,
+  hidden,
+  title = 'Walkthrough',
+  accent = '#FF4B4B',
+  chapters = defaultChapters,
+  closeLabel = 'Minimize walkthrough',
+  openLabel = 'Open walkthrough',
+  resumeWhenShown = true,
+  playRequest = 0,
+  openExpanded = false,
+  onDismiss,
+  animate = false,
+}: {
+  src: string;
+  hidden: boolean;
+  title?: string;
+  accent?: string;
+  chapters?: readonly WalkthroughChapter[];
+  closeLabel?: string;
+  openLabel?: string;
+  resumeWhenShown?: boolean;
+  playRequest?: number;
+  openExpanded?: boolean;
+  onDismiss?: () => void;
+  animate?: boolean;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const playedRequest = useRef(0);
+  const hiddenRef = useRef(hidden);
+  hiddenRef.current = hidden;
+  const setShell = useCallback((node: HTMLDivElement | null) => {
+    shellRef.current = node;
+    if (node && hiddenRef.current) node.setAttribute('inert', '');
+  }, []);
   const wasPlaying = useRef(false);
   const labelId = useId();
   const [expanded, setExpanded] = useState(false);
@@ -82,7 +118,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
     const video = videoRef.current;
     if (!video) return;
     if (!hidden) {
-      if (wasPlaying.current) {
+      if (resumeWhenShown && wasPlaying.current) {
         video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
         wasPlaying.current = false;
       }
@@ -95,7 +131,24 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
     if (document.pictureInPictureElement === video) {
       document.exitPictureInPicture().catch(() => {});
     }
+  }, [hidden, resumeWhenShown]);
+
+  useEffect(() => {
+    const node = shellRef.current;
+    if (!node) return;
+    if (hidden) node.setAttribute('inert', '');
+    else node.removeAttribute('inert');
   }, [hidden]);
+
+  useLayoutEffect(() => {
+    if (!playRequest || playRequest === playedRequest.current) return;
+    playedRequest.current = playRequest;
+    const video = videoRef.current;
+    if (!video || hidden) return;
+    setMinimized(false);
+    if (openExpanded) setExpanded(true);
+    video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+  }, [playRequest, hidden, openExpanded]);
 
   useEffect(() => {
     if (!expanded || hidden) return;
@@ -174,14 +227,19 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
       : 'fixed bottom-4 right-4 z-40 w-[200px] sm:bottom-6 sm:right-6 sm:w-[340px]';
 
   const progress = duration > 0 ? Math.min(1, current / duration) : 0;
+  const chapter = chapters.length > 0 ? chapterAt(current, chapters) : null;
 
   return (
-    <div className={`${shell} motion-reduce:transition-none ${hidden ? 'pointer-events-none invisible' : ''}`}>
+    <div
+      ref={setShell}
+      className={`${shell} ${animate && !hidden ? 'walkthrough-player-in' : ''} motion-reduce:transition-none ${hidden ? 'pointer-events-none invisible' : ''}`}
+      style={{ '--walkthrough-accent': accent } as CSSProperties}
+    >
       {minimized ? (
         <button
           type="button"
-          className="grid h-14 w-14 place-items-center rounded-full bg-[#FF4B4B] text-white shadow-[0_16px_50px_rgba(0,0,0,0.45)]"
-          aria-label="Open walkthrough"
+          className="grid h-14 w-14 place-items-center rounded-full bg-[var(--walkthrough-accent)] text-white shadow-[0_16px_50px_rgba(0,0,0,0.45)]"
+          aria-label={openLabel}
           onClick={() => setMinimized(false)}
         >
           <Icon><path d="M8 5.5v13l11-6.5-11-6.5z" /></Icon>
@@ -236,13 +294,14 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
           <button
             type="button"
             className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-white"
-            aria-label="Minimize walkthrough"
+            aria-label={closeLabel}
             onClick={(event) => {
               event.stopPropagation();
               videoRef.current?.pause();
               setExpanded(false);
               setRateOpen(false);
-              setMinimized(true);
+              if (onDismiss) onDismiss();
+              else setMinimized(true);
             }}
           >
             <Icon><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5z" /></Icon>
@@ -250,7 +309,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
           {!playing && !inPip && (
             <button
               type="button"
-              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[#FF4B4B] text-white"
+              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[var(--walkthrough-accent)] text-white"
               aria-label="Play"
               onClick={(event) => {
                 event.stopPropagation();
@@ -263,7 +322,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
         </div>
         <div className="bg-[#1a1a1a] px-2.5 py-2">
           <div className="flex items-center justify-between gap-2 px-1">
-            <p id={labelId} className="text-xs font-medium text-white">Walkthrough</p>
+            <p id={labelId} className="text-xs font-medium text-white">{title}</p>
             <div>
               <button
                 type="button"
@@ -282,7 +341,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
                 <button
                   key={option}
                   type="button"
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${option === rate ? 'bg-[#FF4B4B] text-white' : 'bg-[#272727] text-[#aaa]'}`}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${option === rate ? 'bg-[var(--walkthrough-accent)] text-white' : 'bg-[#272727] text-[#aaa]'}`}
                   onClick={() => applyRate(option)}
                 >
                   {option}×
@@ -293,12 +352,12 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
           <div
             ref={trackRef}
             role="slider"
-            tabIndex={0}
+            tabIndex={hidden ? -1 : 0}
             aria-label="Seek"
             aria-valuemin={0}
             aria-valuemax={Math.round(duration)}
             aria-valuenow={Math.round(current)}
-            aria-valuetext={`${formatTime(current)} of ${formatTime(duration)}, ${chapterAt(current).title}`}
+            aria-valuetext={chapter ? `${formatTime(current)} of ${formatTime(duration)}, ${chapter.title}` : `${formatTime(current)} of ${formatTime(duration)}`}
             className="relative mt-1 flex h-8 cursor-pointer items-center px-1"
             onPointerLeave={() => {
               if (!scrubbing.current) setHover(null);
@@ -309,7 +368,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
               seekFromClientX(event.clientX);
             }}
             onPointerMove={(event) => {
-              if (expanded && duration > 0) {
+              if (expanded && duration > 0 && chapters.length > 0) {
                 const rect = event.currentTarget.getBoundingClientRect();
                 const ratio = rect.width <= 0 ? 0 : Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
                 setHover({ ratio, time: ratio * duration });
@@ -333,17 +392,17 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
               }
             }}
           >
-            {expanded && hover && (
+            {expanded && hover && chapters.length > 0 && (
               <span
                 className="pointer-events-none absolute bottom-full z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/90 px-2 py-1 text-xs text-white"
                 style={{ left: `${hover.ratio * 100}%` }}
               >
-                {chapterAt(hover.time).title}
+                {chapterAt(hover.time, chapters)?.title}
                 <span className="ml-2 tabular-nums text-[#aaa]">{formatTime(hover.time)}</span>
               </span>
             )}
             <span className="relative h-1.5 w-full">
-              {expanded && duration > 0 ? (
+              {expanded && duration > 0 && chapters.length > 0 ? (
                 chapters.map((chapter, index) => {
                   const end = chapters[index + 1]?.start ?? duration;
                   const span = Math.max(0, end - chapter.start) / duration;
@@ -355,20 +414,20 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
                       data-chapter={chapter.title}
                       style={{ left: `${(chapter.start / duration) * 100}%`, width: `max(2px, calc(${span * 100}% - 3px))` }}
                     >
-                      <span className="absolute inset-y-0 left-0 bg-[#FF4B4B]" style={{ width: `${fill * 100}%` }} />
+                      <span className="absolute inset-y-0 left-0 bg-[var(--walkthrough-accent)]" style={{ width: `${fill * 100}%` }} />
                     </span>
                   );
                 })
               ) : (
                 <span className="absolute inset-0 overflow-hidden rounded-full bg-[#272727]">
-                  <span className="absolute inset-y-0 left-0 bg-[#FF4B4B]" style={{ width: `${progress * 100}%` }} />
+                  <span className="absolute inset-y-0 left-0 bg-[var(--walkthrough-accent)]" style={{ width: `${progress * 100}%` }} />
                 </span>
               )}
               <span className="absolute top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white" style={{ left: `calc(${progress * 100}% - 7px)` }} />
             </span>
           </div>
-          {expanded && (
-            <p className="px-1 text-[11px] font-medium tracking-wide text-white">{chapterAt(current).title}</p>
+          {expanded && chapter && (
+            <p className="px-1 text-[11px] font-medium tracking-wide text-white">{chapter.title}</p>
           )}
           <div className="mt-1 flex items-center gap-1">
             <button type="button" onClick={togglePlay} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white" aria-label={playing ? 'Pause' : 'Play'}>
@@ -399,7 +458,7 @@ export default function WalkthroughPlayer({ src, hidden }: { src: string; hidden
                 max={1}
                 step={0.05}
                 value={muted ? 0 : volume}
-                className="hidden h-1 w-16 accent-[#FF4B4B] sm:block"
+                className="hidden h-1 w-16 accent-[var(--walkthrough-accent)] sm:block"
                 onChange={(event) => {
                   const video = videoRef.current;
                   if (!video) return;

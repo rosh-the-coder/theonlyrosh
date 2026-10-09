@@ -1,5 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // FLYH DESIGN SYSTEM SOURCE
+        // source checkout: feature/demo-onboarding-intelligence-preview @ dc9dd71
+        // Portable export generated from actual FlyH source.
+        // Served as its own HTML document so portfolio CSS never shares the page.
+        {
+          source: '/work/flyh/design-system',
+          destination: '/flyh-design-system/index.html',
+        },
+        {
+          source: '/work/flyh/design-system/',
+          destination: '/flyh-design-system/index.html',
+        },
+      ],
+    }
+  },
   experimental: {
     // appDir is no longer needed in Next.js 14
   },

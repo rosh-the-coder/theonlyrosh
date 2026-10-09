@@ -16,7 +16,7 @@ export default function Work() {
       id: 'redvelvetvault',
       title: 'REDVELVETVAULT',
       subtitle: 'GAMIFIED PRODUCT',
-      year: '2024-Current',
+      year: '2025',
       image: '/Work/RVV/rvv-cover.png',
       imagePosition: 'center',
       href: '/work/redvelvetvault',
@@ -27,14 +27,14 @@ export default function Work() {
     {
       id: 'flyh',
       title: 'FLYH',
-      subtitle: 'PRODUCT DESIGN',
-      year: '2026',
-      image: '',
+      subtitle: 'PRODUCT DESIGN / AI WORKFLOWS',
+      year: 'September 2026',
+      image: '/Work/FlyH/cover.png',
       imagePosition: 'center',
-      href: '',
-      video: '',
+      href: '/work/flyh',
+      video: '/Work/FlyH/flyh-cover.mp4',
       hiddenOnMobile: false,
-      tickerText: 'PRODUCT DESIGN • CREATOR WORKFLOW • LISTING STUDIO • PRODUCT DESIGN • CREATOR WORKFLOW • LISTING STUDIO'
+      tickerText: 'AI PRODUCT DESIGN • CREATOR COMMERCE • HUMAN-IN-THE-LOOP • WORKFLOW DESIGN • DESIGN ENGINEERING • AGENTIC UX • AI PRODUCT DESIGN • CREATOR COMMERCE • HUMAN-IN-THE-LOOP • WORKFLOW DESIGN • DESIGN ENGINEERING • AGENTIC UX • '
     },
     {
       id: 'careeros',
@@ -71,30 +71,6 @@ export default function Work() {
       video: '/Work/TFA/TFA.mp4',
       hiddenOnMobile: false,
       tickerText: 'FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING • FREELANCE • WEBSITE DESIGN • FRAMER WEBSITE DEVELOPMENT • ARCHITECTURE PORTFOLIO DESIGN • DUAL-DISCIPLINE BRANDING • NARRATIVE-DRIVEN DESIGN • RESPONSIVE WEB DESIGN • USER EXPERIENCE DESIGN • VISUAL STORYTELLING • INTERACTIVE PORTFOLIO • BRAND DESIGN • PROTOTYPING'
-    },
-    {
-      id: 'soon-1',
-      title: 'COMING SOON',
-      subtitle: 'UI/UX',
-      year: '2024',
-      image: '/Work/soon/pexels-alleksana-4271927.jpg',
-      imagePosition: 'center',
-      href: '/project/4',
-      video: '',
-      hiddenOnMobile: true,
-      tickerText: 'VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS'
-    },
-    {
-      id: 'soon-2',
-      title: 'COMING SOON',
-      subtitle: 'UI/UX',
-      year: '2024',
-      image: '/Work/soon/pexels-vie-studio-4439444.jpg',
-      imagePosition: 'center',
-      href: '/project/5',
-      video: '',
-      hiddenOnMobile: true,
-      tickerText: 'VOICE & TONE • BRAND DESIGN • STRATEGY • UX • UI • WEB DESIGN • PRODUCT DESIGN • MOBILE DEVELOPMENT • CREATIVE DIRECTION • USER RESEARCH • PROTOTYPING • VISUAL IDENTITY • BRAND STRATEGY • DIGITAL MARKETING • CONTENT CREATION • INTERACTION DESIGN • INFORMATION ARCHITECTURE • USABILITY TESTING • DESIGN SYSTEMS • FRONTEND DEVELOPMENT • BACKEND INTEGRATION • API DESIGN • DATABASE ARCHITECTURE • CLOUD SOLUTIONS • DEVOPS • PERFORMANCE OPTIMIZATION • SECURITY IMPLEMENTATION • SCALABLE APPLICATIONS • MICROSERVICES • CONTAINERIZATION • CI/CD PIPELINES • AUTOMATED TESTING • MONITORING & ANALYTICS'
     }
   ];
 
